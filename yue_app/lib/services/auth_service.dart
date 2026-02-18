@@ -59,11 +59,12 @@ class AuthService {
       final authData = apiResp.data!;
 
       // Store user center token and profile
+      final profileJson = authData.user.toJsonString();
       await _storage.setUserCenterToken(authData.token);
-      await _storage.setUserProfile(authData.user.toJsonString());
+      await _storage.setUserProfile(profileJson);
 
       // Exchange for community token
-      await _tryExchangeCommunityToken(authData.token, userProfileJson: authData.user.toJsonString());
+      await _tryExchangeCommunityToken(authData.token, userProfileJson: profileJson);
 
       return authData;
     } on DioException catch (e) {
@@ -107,11 +108,12 @@ class AuthService {
       final authData = apiResp.data!;
 
       // Store user center token and profile
+      final profileJson = authData.user.toJsonString();
       await _storage.setUserCenterToken(authData.token);
-      await _storage.setUserProfile(authData.user.toJsonString());
+      await _storage.setUserProfile(profileJson);
 
       // Exchange for community token
-      await _tryExchangeCommunityToken(authData.token, userProfileJson: authData.user.toJsonString());
+      await _tryExchangeCommunityToken(authData.token, userProfileJson: profileJson);
 
       return authData;
     } on DioException catch (e) {
