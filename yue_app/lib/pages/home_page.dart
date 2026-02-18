@@ -3,6 +3,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/waterfall_feed.dart';
+import 'discover_page.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -48,28 +49,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDiscoverPage() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.explore_rounded, size: 64, color: Color(0xFFFF6B6B)),
-          SizedBox(height: 16),
-          Text(
-            '发现',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '探索更多精彩内容',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
-      ),
-    );
+    return const DiscoverPage();
   }
 
   Widget _buildMessagePage() {
