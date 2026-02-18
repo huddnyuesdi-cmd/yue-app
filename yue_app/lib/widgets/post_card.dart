@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/post_model.dart';
 
 /// Post card widget for the waterfall grid layout.
@@ -22,7 +23,8 @@ class PostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Post image
-          Expanded(
+          AspectRatio(
+            aspectRatio: 1.0,
             child: _buildImage(),
           ),
           // Post info
@@ -107,14 +109,11 @@ class PostCard extends StatelessWidget {
       return Container(
         width: double.infinity,
         color: const Color(0xFFF5F5F5),
-        child: Image.network(
-          post.images.first,
+        child: CachedNetworkImage(
+          imageUrl: post.images.first,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildPlaceholder(),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return _buildPlaceholder();
-          },
+          placeholder: (_, __) => _buildPlaceholder(),
+          errorWidget: (_, __, ___) => _buildPlaceholder(),
         ),
       );
     }

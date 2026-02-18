@@ -1,9 +1,10 @@
-import '../lib/models/user_model.dart';
-import '../lib/models/post_model.dart';
-import '../lib/models/auth_model.dart';
+import 'package:yue_app/models/user_model.dart';
+import 'package:yue_app/models/post_model.dart';
+import 'package:yue_app/models/auth_model.dart';
 
 /// Basic unit tests for model parsing.
 /// Run with: flutter test test/model_test.dart
+/// Or standalone: dart test/model_test.dart
 void main() {
   // Test UserModel
   _testUserModel();

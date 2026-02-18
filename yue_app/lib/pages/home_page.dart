@@ -28,7 +28,10 @@ class _HomePageState extends State<HomePage>
   bool _isLoading = false;
   bool _hasMore = true;
   int _currentPage = 1;
-  final int _pageSize = 20;
+  static const int _pageSize = 20;
+  static const int _gridCrossAxisCount = 2;
+  static const double _gridSpacing = 8.0;
+  static const double _gridChildAspectRatio = 0.65;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -230,10 +233,10 @@ class _HomePageState extends State<HomePage>
           padding: const EdgeInsets.all(8),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.65,
+              crossAxisCount: _gridCrossAxisCount,
+              mainAxisSpacing: _gridSpacing,
+              crossAxisSpacing: _gridSpacing,
+              childAspectRatio: _gridChildAspectRatio,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
