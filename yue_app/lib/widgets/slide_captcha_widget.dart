@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -23,14 +24,18 @@ class SlideCaptchaDialog extends StatefulWidget {
 }
 
 class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
-  // Approximate width of the puzzle piece thumb
-  static const double _thumbWidth = 50;
+  // Default thumb dimensions (matches the server-generated 60x60 puzzle piece)
+  static const double _thumbSize = 60;
 
   CaptchaData? _captchaData;
   bool _isLoading = true;
   bool _isVerifying = false;
   String? _error;
   double _sliderValue = 0;
+
+  // Cached decoded image bytes to avoid re-decoding on every rebuild
+  Uint8List? _bgImageBytes;
+  Uint8List? _thumbImageBytes;
 
   @override
   void initState() {
@@ -47,14 +52,29 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
       _isLoading = true;
       _error = null;
       _sliderValue = 0;
+      _bgImageBytes = null;
+      _thumbImageBytes = null;
     });
 
     try {
       final authService = await AuthService.getInstance();
       final captchaData = await authService.generateCaptcha();
       if (!mounted) return;
+
+      // Decode base64 images once and cache the bytes
+      Uint8List? bgBytes;
+      Uint8List? thumbBytes;
+      if (captchaData.image != null) {
+        bgBytes = base64Decode(captchaData.image!.split(',').last);
+      }
+      if (captchaData.thumbImage != null) {
+        thumbBytes = base64Decode(captchaData.thumbImage!.split(',').last);
+      }
+
       setState(() {
         _captchaData = captchaData;
+        _bgImageBytes = bgBytes;
+        _thumbImageBytes = thumbBytes;
         _isLoading = false;
       });
     } catch (e) {
@@ -167,7 +187,7 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
   Widget _buildCaptchaContent() {
     final captcha = _captchaData!;
     final imgWidth = (captcha.imageWidth ?? 300).toDouble();
-    final imgHeight = (captcha.imageHeight ?? 200).toDouble();
+    final imgHeight = (captcha.imageHeight ?? 220).toDouble(); // API returns 220
 
     // Scale to fit dialog width (max ~280px padding considered)
     final maxWidth = MediaQuery.of(context).size.width - 120;
@@ -183,27 +203,31 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
           width: displayWidth,
           height: displayHeight,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Background image
-              if (captcha.image != null)
+              // Background image (uses cached bytes)
+              if (_bgImageBytes != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.memory(
-                    base64Decode(captcha.image!.split(',').last),
+                    _bgImageBytes!,
                     width: displayWidth,
                     height: displayHeight,
                     fit: BoxFit.fill,
+                    gaplessPlayback: true,
                   ),
                 ),
-              // Thumb image (puzzle piece) - scaled proportionally
-              if (captcha.thumbImage != null)
+              // Thumb image (puzzle piece) at natural size, scaled with background
+              if (_thumbImageBytes != null)
                 Positioned(
                   left: _sliderValue * scale,
                   top: (captcha.thumbY ?? 0) * scale,
                   child: Image.memory(
-                    base64Decode(captcha.thumbImage!.split(',').last),
-                    height: displayHeight * 0.4,
+                    _thumbImageBytes!,
+                    width: _thumbSize * scale,
+                    height: _thumbSize * scale,
                     fit: BoxFit.contain,
+                    gaplessPlayback: true,
                   ),
                 ),
             ],
@@ -230,8 +254,7 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
                 child: Slider(
                   value: _sliderValue,
                   min: 0,
-                  // Subtract thumb width so slider range matches puzzle placement
-                  max: imgWidth - _thumbWidth,
+                  max: imgWidth - _thumbSize,
                   onChanged: _isVerifying
                       ? null
                       : (value) {
