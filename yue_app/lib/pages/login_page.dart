@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../services/auth_service.dart';
+import '../widgets/slide_captcha_widget.dart';
 import 'register_page.dart';
 import 'home_page.dart';
 
@@ -40,7 +41,21 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authService = await AuthService.getInstance();
-      await authService.login(username, password);
+
+      // Check if captcha is required
+      String? captchaId;
+      final captchaStatus = await authService.getCaptchaStatus();
+      if (captchaStatus.enabled) {
+        if (!mounted) return;
+        captchaId = await SlideCaptchaDialog.show(context);
+        if (captchaId == null) {
+          // User cancelled captcha
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      await authService.login(username, password, captchaId: captchaId);
 
       if (!mounted) return;
 

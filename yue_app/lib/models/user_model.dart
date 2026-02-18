@@ -116,14 +116,39 @@ class CaptchaData {
   final String id;
   final bool enabled;
   final String? target;
+  final String? mode;
+  final String? image;
+  final String? thumbImage;
+  final int? thumbX;
+  final int? thumbY;
+  final int? imageWidth;
+  final int? imageHeight;
 
-  CaptchaData({required this.id, required this.enabled, this.target});
+  CaptchaData({
+    required this.id,
+    required this.enabled,
+    this.target,
+    this.mode,
+    this.image,
+    this.thumbImage,
+    this.thumbX,
+    this.thumbY,
+    this.imageWidth,
+    this.imageHeight,
+  });
 
   factory CaptchaData.fromJson(Map<String, dynamic> json) {
     return CaptchaData(
       id: json['id'] as String,
       enabled: json['enabled'] as bool? ?? false,
       target: json['target'] as String?,
+      mode: json['mode'] as String?,
+      image: json['image'] as String?,
+      thumbImage: json['thumb_image'] as String?,
+      thumbX: json['thumb_x'] as int?,
+      thumbY: json['thumb_y'] as int?,
+      imageWidth: json['image_width'] as int?,
+      imageHeight: json['image_height'] as int?,
     );
   }
 }

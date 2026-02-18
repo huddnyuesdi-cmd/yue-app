@@ -34,12 +34,18 @@ class AuthService {
 
   /// Login with email (or username) and password.
   /// Returns the AuthResponse on success.
-  Future<AuthResponse> login(String email, String password) async {
+  Future<AuthResponse> login(String email, String password, {String? captchaId}) async {
     try {
-      final response = await _userCenterDio.post('/auth/login', data: {
+      final body = <String, dynamic>{
         'email': email,
         'password': password,
-      });
+      };
+
+      if (captchaId != null) {
+        body['captcha_id'] = captchaId;
+      }
+
+      final response = await _userCenterDio.post('/auth/login', data: body);
 
       final apiResp = ApiResponse.fromJson(
         response.data as Map<String, dynamic>,
@@ -145,12 +151,18 @@ class AuthService {
   }
 
   /// Verify a captcha.
-  Future<bool> verifyCaptcha(String id, int position) async {
+  /// For slide mode, sends answer.x; for other modes, sends position.
+  Future<bool> verifyCaptcha(String id, int position, {String mode = 'slide'}) async {
     try {
-      final response = await _userCenterDio.post('/captcha/verify', data: {
-        'id': id,
-        'position': position,
-      });
+      final body = <String, dynamic>{'id': id};
+
+      if (mode == 'slide') {
+        body['answer'] = {'x': position};
+      } else {
+        body['position'] = position;
+      }
+
+      final response = await _userCenterDio.post('/captcha/verify', data: body);
       final data = response.data as Map<String, dynamic>;
       return data['success'] as bool? ?? false;
     } on DioException catch (e) {
