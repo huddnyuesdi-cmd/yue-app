@@ -20,6 +20,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _isCommentsLoading = true;
   String? _error;
   final _commentController = TextEditingController();
+  final _commentFocusNode = FocusNode();
   int _currentImageIndex = 0;
 
   @override
@@ -33,6 +34,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -436,6 +438,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ),
               child: TextField(
                 controller: _commentController,
+                focusNode: _commentFocusNode,
                 decoration: const InputDecoration(
                   hintText: '说点什么...',
                   hintStyle: TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
@@ -465,7 +468,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             icon: Icons.chat_bubble_outline,
             label: '${_post?.commentCount ?? 0}',
             color: const Color(0xFF999999),
-            onTap: () {},
+            onTap: () => _commentFocusNode.requestFocus(),
           ),
         ],
       ),

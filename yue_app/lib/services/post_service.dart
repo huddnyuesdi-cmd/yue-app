@@ -126,7 +126,6 @@ class PostService {
       return Post.fromJson(postData);
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow; // unreachable but satisfies analyzer
     }
   }
 
@@ -160,7 +159,6 @@ class PostService {
           .toList();
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -182,7 +180,6 @@ class PostService {
       return data['code'] == 200;
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -203,7 +200,6 @@ class PostService {
       return data['code'] == 200;
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -233,7 +229,6 @@ class PostService {
       return data['code'] == 200;
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -294,7 +289,6 @@ class PostService {
       return PostListResponse(posts: posts, pagination: pagination);
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -366,7 +360,6 @@ class PostService {
       return PostListResponse(posts: posts, pagination: pagination);
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -412,7 +405,6 @@ class PostService {
       return PostListResponse(posts: posts, pagination: pagination);
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -458,7 +450,6 @@ class PostService {
       return PostListResponse(posts: posts, pagination: pagination);
     } on DioException catch (e) {
       _throwDioError(e);
-      rethrow;
     }
   }
 
@@ -486,7 +477,7 @@ class PostService {
     }
   }
 
-  void _throwDioError(DioException e) {
+  Never _throwDioError(DioException e) {
     if (e.response != null) {
       final data = e.response?.data;
       if (data is Map<String, dynamic>) {
