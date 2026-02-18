@@ -56,6 +56,10 @@ class StorageService {
     return _prefs.getInt(_keyCommunityUserId);
   }
 
+  Future<void> clearCommunityUserId() async {
+    await _prefs.remove(_keyCommunityUserId);
+  }
+
   // User Profile (JSON string)
   Future<void> setUserProfile(String profileJson) async {
     await _prefs.setString(_keyUserProfile, profileJson);

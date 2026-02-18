@@ -178,7 +178,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _clearCache() async {
-    // Just show a confirmation
+    final storage = await StorageService.getInstance();
+    await storage.clearCommunityUserId();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('缓存已清除')),

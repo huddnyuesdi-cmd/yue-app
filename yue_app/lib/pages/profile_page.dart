@@ -30,7 +30,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   String? _communityNickname;
   String? _communityAvatar;
   String? _communityBio;
-  String? _communityUserId2;
+  String? _communityUsername;
 
   @override
   void initState() {
@@ -101,7 +101,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           _communityNickname = communityUser['nickname'] as String?;
           _communityAvatar = communityUser['avatar'] as String?;
           _communityBio = communityUser['bio'] as String?;
-          _communityUserId2 = communityUser['user_id'] as String?;
+          _communityUsername = communityUser['user_id'] as String?;
         });
       }
       _loadPosts();
@@ -288,8 +288,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ),
           const SizedBox(height: 4),
           Text(
-            _communityUserId2 != null && _communityUserId2!.isNotEmpty 
-                ? '@${_communityUserId2}' 
+            _communityUsername != null && _communityUsername!.isNotEmpty 
+                ? '@${_communityUsername}' 
                 : '@${_user?.username ?? ''}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
           ),
