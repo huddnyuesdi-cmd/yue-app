@@ -7,7 +7,7 @@ import '../services/post_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
 import 'edit_profile_page.dart';
-import 'login_page.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -165,38 +165,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
   }
 
-  Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定', style: TextStyle(color: Color(0xFFFF6B6B))),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    final authService = await AuthService.getInstance();
-    await authService.logout();
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (_) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return NestedScrollView(
@@ -300,7 +268,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               ),
               const SizedBox(width: 8),
               IconButton(
-                onPressed: _handleLogout,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
+                  );
+                },
                 icon: const Icon(Icons.settings_outlined, color: Color(0xFF666666)),
               ),
             ],
