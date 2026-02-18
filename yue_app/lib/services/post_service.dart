@@ -741,7 +741,7 @@ class PostService {
 
       return PostListResponse(posts: posts, pagination: pagination);
     } catch (_) {
-      // Gracefully handle server errors (e.g. 500) by returning empty
+      // Server may return 500 for following feed; gracefully show empty state
       return PostListResponse(posts: [], pagination: null);
     }
   }
