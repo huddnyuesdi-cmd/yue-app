@@ -1,0 +1,429 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../models/user_model.dart';
+import '../models/post_model.dart';
+import '../services/auth_service.dart';
+import '../services/post_service.dart';
+import '../services/storage_service.dart';
+import '../widgets/post_card.dart';
+import 'edit_profile_page.dart';
+import 'settings_page.dart';
+
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  UserCenterUser? _user;
+  Map<String, dynamic> _stats = {};
+  List<Post> _posts = [];
+  List<Post> _collections = [];
+  List<Post> _likes = [];
+  bool _isLoadingPosts = false;
+  bool _isLoadingCollections = false;
+  bool _isLoadingLikes = false;
+  int _communityUserId = 0;
+  String? _communityNickname;
+  String? _communityAvatar;
+  String? _communityBio;
+  String? _communityUsername;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _loadUser();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) return;
+    switch (_tabController.index) {
+      case 0:
+        if (_posts.isEmpty) _loadPosts();
+        break;
+      case 1:
+        if (_collections.isEmpty) _loadCollections();
+        break;
+      case 2:
+        if (_likes.isEmpty) _loadLikes();
+        break;
+    }
+  }
+
+  Future<void> _loadUser() async {
+    final authService = await AuthService.getInstance();
+    final user = authService.getStoredUser();
+    if (mounted) {
+      setState(() => _user = user);
+    }
+    if (user != null) {
+      await _loadCommunityProfile(user);
+    }
+  }
+
+  Future<void> _loadCommunityProfile(UserCenterUser user) async {
+    try {
+      final postService = await PostService.getInstance();
+      
+      // Use /api/auth/me to get the real community user
+      final communityUser = await postService.getCurrentUser();
+      final autoId = communityUser['id'] as int?;
+      
+      if (autoId != null && autoId > 0) {
+        _communityUserId = autoId;
+      } else {
+        _communityUserId = user.id;
+      }
+
+      // Store community user info for other pages
+      if (communityUser.isNotEmpty) {
+        final storage = await StorageService.getInstance();
+        await storage.setCommunityUserId(_communityUserId);
+      }
+
+      final stats = await postService.getUserStats(_communityUserId);
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+          // Update display info from community profile if available
+          _communityNickname = communityUser['nickname'] as String?;
+          _communityAvatar = communityUser['avatar'] as String?;
+          _communityBio = communityUser['bio'] as String?;
+          _communityUsername = communityUser['user_id'] as String?;
+        });
+      }
+      _loadPosts();
+    } catch (_) {
+      _communityUserId = user.id;
+      _loadPosts();
+    }
+  }
+
+  Future<void> _loadPosts() async {
+    if (_isLoadingPosts || _communityUserId == 0) return;
+    setState(() => _isLoadingPosts = true);
+
+    try {
+      final postService = await PostService.getInstance();
+      final response = await postService.getUserPosts(_communityUserId);
+      if (mounted) {
+        setState(() {
+          _posts = response.posts;
+          _isLoadingPosts = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingPosts = false);
+    }
+  }
+
+  Future<void> _loadCollections() async {
+    if (_isLoadingCollections || _communityUserId == 0) return;
+    setState(() => _isLoadingCollections = true);
+
+    try {
+      final postService = await PostService.getInstance();
+      final response = await postService.getUserCollections(_communityUserId);
+      if (mounted) {
+        setState(() {
+          _collections = response.posts;
+          _isLoadingCollections = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCollections = false);
+    }
+  }
+
+  Future<void> _loadLikes() async {
+    if (_isLoadingLikes || _communityUserId == 0) return;
+    setState(() => _isLoadingLikes = true);
+
+    try {
+      final postService = await PostService.getInstance();
+      final response = await postService.getUserLikes(_communityUserId);
+      if (mounted) {
+        setState(() {
+          _likes = response.posts;
+          _isLoadingLikes = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingLikes = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverToBoxAdapter(child: _buildHeader()),
+          SliverToBoxAdapter(child: _buildStats()),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
+                controller: _tabController,
+                labelColor: const Color(0xFF222222),
+                unselectedLabelColor: const Color(0xFF999999),
+                labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: const TextStyle(fontSize: 15),
+                indicatorColor: const Color(0xFFFF2442),
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorWeight: 2.5,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: '笔记'),
+                  Tab(text: '收藏'),
+                  Tab(text: '点赞'),
+                ],
+              ),
+            ),
+          ),
+        ];
+      },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildPostGrid(_posts, _isLoadingPosts),
+          _buildPostGrid(_collections, _isLoadingCollections),
+          _buildPostGrid(_likes, _isLoadingLikes),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Avatar
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
+                ),
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: const Color(0xFFF5F5F5),
+                  child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
+                      ? ClipOval(
+                          child: Image.network(
+                            _communityAvatar!,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.person,
+                              size: 36,
+                              color: Color(0xFFCCCCCC),
+                            ),
+                          ),
+                        )
+                      : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
+                          ? ClipOval(
+                              child: Image.network(
+                                _user!.avatar!,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  size: 36,
+                                  color: Color(0xFFCCCCCC),
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
+                ),
+              ),
+              const Spacer(),
+              OutlinedButton(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => EditProfilePage(
+                      userId: _communityUserId,
+                      nickname: _communityNickname,
+                      avatar: _communityAvatar,
+                      bio: _communityBio,
+                    )),
+                  );
+                  if (result == true) {
+                    _loadUser();
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF333333),
+                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
+                  );
+                },
+                child: const Icon(Icons.settings_outlined, size: 22, color: Color(0xFF666666)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            _communityNickname ?? _user?.displayName ?? '用户',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF222222),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            _communityUsername != null && _communityUsername!.isNotEmpty 
+                ? '@$_communityUsername' 
+                : '@${_user?.username ?? ''}',
+            style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+          ),
+          if (_communityBio != null && _communityBio!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              _communityBio!,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStats() {
+    final postCount = _stats['post_count'] as int? ?? _stats['posts_count'] as int? ?? _posts.length;
+    final followingCount = _stats['following_count'] as int? ?? 0;
+    final followerCount = _stats['follower_count'] as int? ?? _stats['followers_count'] as int? ?? 0;
+    final likeCount = _stats['like_count'] as int? ?? _stats['likes_count'] as int? ?? _stats['total_likes'] as int? ?? 0;
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('$postCount', '笔记'),
+          _buildDivider(),
+          _buildStatItem('$followingCount', '关注'),
+          _buildDivider(),
+          _buildStatItem('$followerCount', '粉丝'),
+          _buildDivider(),
+          _buildStatItem('$likeCount', '获赞'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      width: 1,
+      height: 24,
+      color: const Color(0xFFEEEEEE),
+    );
+  }
+
+  Widget _buildStatItem(String count, String label) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPostGrid(List<Post> posts, bool isLoading) {
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (posts.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+            SizedBox(height: 12),
+            Text('暂无内容', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+          ],
+        ),
+      );
+    }
+
+    return MasonryGridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      padding: const EdgeInsets.all(8),
+      itemCount: posts.length,
+      itemBuilder: (context, index) => PostCard(post: posts[index]),
+    );
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) => false;
+}

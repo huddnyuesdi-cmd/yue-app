@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../pages/post_detail_page.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -8,14 +9,22 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PostDetailPage(postId: post.id, initialPost: post),
+          ),
+        );
+      },
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -27,40 +36,46 @@ class PostCard extends StatelessWidget {
         children: [
           // Cover image
           if (post.coverImage != null && post.coverImage!.isNotEmpty)
-            AspectRatio(
-              aspectRatio: _getImageAspectRatio(),
-              child: Image.network(
-                post.coverImage!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFFF5F5F5),
-                  child: const Center(
-                    child: Icon(Icons.image_outlined,
-                        size: 32, color: Color(0xFFCCCCCC)),
-                  ),
-                ),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+              child: AspectRatio(
+                aspectRatio: _getImageAspectRatio(),
+                child: Image.network(
+                  post.coverImage!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: const Color(0xFFF5F5F5),
                     child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFFFF6B6B),
+                      child: Icon(Icons.image_outlined,
+                          size: 32, color: Color(0xFFDDDDDD)),
+                    ),
+                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: const Color(0xFFF8F8F8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
 
           // Content area
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -73,16 +88,16 @@ class PostCard extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF333333),
-                    height: 1.3,
+                    height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 // Author row
                 Row(
                   children: [
                     // Avatar
                     _buildAvatar(),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 6),
                     // Username
                     Expanded(
                       child: Text(
@@ -95,18 +110,18 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Like count
-                    const Icon(
-                      Icons.favorite_border,
+                    // Like icon
+                    Icon(
+                      post.liked ? Icons.favorite : Icons.favorite_border,
                       size: 14,
-                      color: Color(0xFFCCCCCC),
+                      color: post.liked ? const Color(0xFFFF2442) : const Color(0xFFCCCCCC),
                     ),
-                    const SizedBox(width: 2),
+                    const SizedBox(width: 3),
                     Text(
                       _formatCount(post.likeCount),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Color(0xFFCCCCCC),
+                        color: post.liked ? const Color(0xFFFF2442) : const Color(0xFFCCCCCC),
                       ),
                     ),
                   ],
@@ -116,6 +131,7 @@ class PostCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

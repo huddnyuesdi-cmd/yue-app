@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../widgets/waterfall_feed.dart';
-import 'login_page.dart';
+import 'discover_page.dart';
+import 'home_feed_page.dart';
+import 'notifications_page.dart';
+import 'profile_page.dart';
+import 'publish_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,240 +15,97 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  UserCenterUser? _user;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUser();
-  }
-
-  Future<void> _loadUser() async {
-    final authService = await AuthService.getInstance();
-    final user = authService.getStoredUser();
-    if (mounted) {
-      setState(() => _user = user);
-    }
-  }
-
-  Future<void> _handleLogout() async {
-    final authService = await AuthService.getInstance();
-    await authService.logout();
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (_) => false,
-    );
-  }
-
-  Widget _buildHomePage() {
-    return const WaterfallFeed();
-  }
-
-  Widget _buildDiscoverPage() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.explore_rounded, size: 64, color: Color(0xFFFF6B6B)),
-          SizedBox(height: 16),
-          Text(
-            '发现',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '探索更多精彩内容',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessagePage() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.message_rounded, size: 64, color: Color(0xFFFF6B6B)),
-          SizedBox(height: 16),
-          Text(
-            '消息',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '暂无新消息',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfilePage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          // Avatar
-          CircleAvatar(
-            radius: 44,
-            backgroundColor: const Color(0xFFFF6B6B),
-            child: _user?.avatar != null && _user!.avatar!.isNotEmpty
-                ? ClipOval(
-                    child: Image.network(
-                      _user!.avatar!,
-                      width: 88,
-                      height: 88,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.person,
-                        size: 44,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : const Icon(Icons.person, size: 44, color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _user?.displayName ?? '用户',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '@${_user?.username ?? ''}',
-            style: const TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _user?.email ?? '',
-            style: const TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
-          ),
-          const SizedBox(height: 32),
-          // Info cards
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                _buildInfoRow('用户ID', '${_user?.id ?? '-'}'),
-                const Divider(height: 24),
-                _buildInfoRow(
-                  'VIP等级',
-                  _user?.vipLevel != null ? 'VIP ${_user!.vipLevel}' : '普通用户',
-                ),
-                const Divider(height: 24),
-                _buildInfoRow(
-                  '邮箱验证',
-                  _user?.emailVerified == true ? '已验证' : '未验证',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Logout button
-          SizedBox(
-            width: double.infinity,
-            child: TDButton(
-              text: '退出登录',
-              size: TDButtonSize.large,
-              type: TDButtonType.outline,
-              shape: TDButtonShape.round,
-              theme: TDButtonTheme.danger,
-              isBlock: true,
-              onTap: _handleLogout,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF666666))),
-        Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF333333))),
-      ],
-    );
-  }
-
-  List<Widget> _buildPages() {
-    return [
-      _buildHomePage(),
-      _buildDiscoverPage(),
-      _buildMessagePage(),
-      _buildProfilePage(),
-    ];
-  }
+  final List<Widget> _pages = const [
+    HomeFeedPage(),
+    DiscoverPage(),
+    SizedBox(), // Placeholder for center publish button
+    NotificationsPage(),
+    ProfilePage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final pages = _buildPages();
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(child: pages[_currentIndex]),
-      bottomNavigationBar: TDBottomTabBar(
-        TDBottomTabBarBasicType.iconText,
-        componentType: TDBottomTabBarComponentType.normal,
-        currentIndex: _currentIndex,
-        navigationTabs: [
-          TDBottomTabBarTabConfig(
-            tabText: '首页',
-            selectedIcon: Icon(Icons.home_rounded, color: const Color(0xFFFF6B6B)),
-            unselectedIcon: Icon(Icons.home_outlined, color: const Color(0xFF999999)),
-            onTap: () {
-              if (mounted) setState(() => _currentIndex = 0);
-            },
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: Color(0xFFF0F0F0), width: 0.5),
           ),
-          TDBottomTabBarTabConfig(
-            tabText: '发现',
-            selectedIcon: Icon(Icons.explore_rounded, color: const Color(0xFFFF6B6B)),
-            unselectedIcon: Icon(Icons.explore_outlined, color: const Color(0xFF999999)),
-            onTap: () {
-              if (mounted) setState(() => _currentIndex = 1);
-            },
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTabItem(0, Icons.home_rounded, Icons.home_outlined, '首页'),
+                _buildTabItem(1, Icons.explore_rounded, Icons.explore_outlined, '发现'),
+                _buildPublishButton(),
+                _buildTabItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息'),
+                _buildTabItem(4, Icons.person_rounded, Icons.person_outline_rounded, '我'),
+              ],
+            ),
           ),
-          TDBottomTabBarTabConfig(
-            tabText: '消息',
-            selectedIcon: Icon(Icons.message_rounded, color: const Color(0xFFFF6B6B)),
-            unselectedIcon: Icon(Icons.message_outlined, color: const Color(0xFF999999)),
-            onTap: () {
-              if (mounted) setState(() => _currentIndex = 2);
-            },
-          ),
-          TDBottomTabBarTabConfig(
-            tabText: '我的',
-            selectedIcon: Icon(Icons.person_rounded, color: const Color(0xFFFF6B6B)),
-            unselectedIcon: Icon(Icons.person_outline, color: const Color(0xFF999999)),
-            onTap: () {
-              if (mounted) setState(() => _currentIndex = 3);
-            },
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabItem(int index, IconData activeIcon, IconData icon, String label) {
+    final isActive = _currentIndex == index;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (mounted) setState(() => _currentIndex = index);
+      },
+      child: SizedBox(
+        width: 56,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              size: 24,
+              color: isActive ? const Color(0xFF222222) : const Color(0xFFBBBBBB),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: isActive ? const Color(0xFF222222) : const Color(0xFFBBBBBB),
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPublishButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PublishPage()),
+        );
+      },
+      child: Container(
+        width: 44,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF2442),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
     );
   }

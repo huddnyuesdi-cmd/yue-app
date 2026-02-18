@@ -42,39 +42,40 @@ class _SplashPageState extends State<SplashPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 88,
-              height: 88,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6B6B),
-                borderRadius: BorderRadius.circular(24),
+                color: const Color(0xFFFF2442),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: const Center(
                 child: Text(
-                  '悦',
+                  '汐',
                   style: TextStyle(
-                    fontSize: 44,
+                    fontSize: 42,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             const Text(
-              'YueM',
+              '汐社',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
+                color: Color(0xFF222222),
+                letterSpacing: 2,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
             const SizedBox(
-              width: 24,
-              height: 24,
+              width: 22,
+              height: 22,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Color(0xFFFF6B6B),
+                color: Color(0xFFDDDDDD),
               ),
             ),
           ],

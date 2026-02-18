@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:flutter/services.dart';
 import 'pages/splash_page.dart';
 
 class YueMApp extends StatelessWidget {
@@ -7,24 +7,24 @@ class YueMApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TDTheme(
-      data: TDTheme.defaultData(),
-      child: MaterialApp(
-        title: 'YueM',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFFF6B6B),
-          ),
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Color(0xFF333333),
-            elevation: 0,
-          ),
+    return MaterialApp(
+      title: '汐社',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFFF2442),
+          primary: const Color(0xFFFF2442),
         ),
-        home: const SplashPage(),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF222222),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+        ),
       ),
+      home: const SplashPage(),
     );
   }
 }

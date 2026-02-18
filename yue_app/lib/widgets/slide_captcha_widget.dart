@@ -161,7 +161,7 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
                 height: 200,
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFFFF6B6B),
+                    color: Color(0xFFFF2442),
                   ),
                 ),
               )
@@ -242,10 +242,10 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
             children: [
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: const Color(0xFFFF6B6B),
+                  activeTrackColor: const Color(0xFFFF2442),
                   inactiveTrackColor: const Color(0xFFE0E0E0),
-                  thumbColor: const Color(0xFFFF6B6B),
-                  overlayColor: const Color(0xFFFF6B6B).withAlpha(51),
+                  thumbColor: const Color(0xFFFF2442),
+                  overlayColor: const Color(0xFFFF2442).withAlpha(51),
                   trackHeight: 8,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 14,
@@ -290,7 +290,7 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Color(0xFFFF6B6B),
+                color: Color(0xFFFF2442),
               ),
             ),
           ),
@@ -316,7 +316,7 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
               icon: const Icon(Icons.refresh),
               label: const Text('重试'),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF6B6B),
+                foregroundColor: const Color(0xFFFF2442),
               ),
             ),
           ],

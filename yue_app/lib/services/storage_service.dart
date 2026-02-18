@@ -5,6 +5,7 @@ class StorageService {
   static const String _keyCommunityToken = 'community_token';
   static const String _keyCommunityRefreshToken = 'community_refresh_token';
   static const String _keyUserProfile = 'user_profile';
+  static const String _keyCommunityUserId = 'community_user_id';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -46,6 +47,19 @@ class StorageService {
     return _prefs.getString(_keyCommunityRefreshToken);
   }
 
+  // Community User ID
+  Future<void> setCommunityUserId(int userId) async {
+    await _prefs.setInt(_keyCommunityUserId, userId);
+  }
+
+  int? getCommunityUserId() {
+    return _prefs.getInt(_keyCommunityUserId);
+  }
+
+  Future<void> clearCommunityUserId() async {
+    await _prefs.remove(_keyCommunityUserId);
+  }
+
   // User Profile (JSON string)
   Future<void> setUserProfile(String profileJson) async {
     await _prefs.setString(_keyUserProfile, profileJson);
@@ -61,6 +75,7 @@ class StorageService {
     await _prefs.remove(_keyCommunityToken);
     await _prefs.remove(_keyCommunityRefreshToken);
     await _prefs.remove(_keyUserProfile);
+    await _prefs.remove(_keyCommunityUserId);
   }
 
   // Check if logged in

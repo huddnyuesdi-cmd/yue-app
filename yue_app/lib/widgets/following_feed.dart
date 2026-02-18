@@ -4,25 +4,23 @@ import '../models/post_model.dart';
 import '../services/post_service.dart';
 import 'post_card.dart';
 
-class WaterfallFeed extends StatefulWidget {
-  const WaterfallFeed({super.key});
+class FollowingFeed extends StatefulWidget {
+  const FollowingFeed({super.key});
 
   @override
-  State<WaterfallFeed> createState() => _WaterfallFeedState();
+  State<FollowingFeed> createState() => _FollowingFeedState();
 }
 
-class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  static const double _kLoadMoreThreshold = 200;
-
+class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveClientMixin {
   final List<Post> _posts = [];
   bool _isLoading = false;
   bool _hasMore = true;
   int _page = 1;
   String? _error;
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -40,7 +38,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - _kLoadMoreThreshold) {
+        _scrollController.position.maxScrollExtent - 200) {
       _loadMorePosts();
     }
   }
@@ -55,10 +53,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
 
     try {
       final postService = await PostService.getInstance();
-      final response = await postService.getRecommendedPosts(
-        page: 1,
-        limit: 20,
-      );
+      final response = await postService.getFollowingPosts(page: 1, limit: 20);
       if (mounted) {
         setState(() {
           _posts.clear();
@@ -85,10 +80,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
 
     try {
       final postService = await PostService.getInstance();
-      final response = await postService.getRecommendedPosts(
-        page: _page,
-        limit: 20,
-      );
+      final response = await postService.getFollowingPosts(page: _page, limit: 20);
       if (mounted) {
         setState(() {
           _posts.addAll(response.posts);
@@ -98,7 +90,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -114,7 +106,9 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
     }
 
     if (_posts.isEmpty && _isLoading) {
-      return _buildLoadingView();
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
+      );
     }
 
     if (_posts.isEmpty) {
@@ -133,33 +127,19 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
         itemCount: _posts.length + (_isLoading ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= _posts.length) {
-            return _buildLoadMoreIndicator();
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
+                ),
+              ),
+            );
           }
           return PostCard(post: _posts[index]);
         },
-      ),
-    );
-  }
-
-  Widget _buildLoadingView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: Color(0xFF999999),
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            '加载中...',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
       ),
     );
   }
@@ -171,11 +151,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: Color(0xFFCCCCCC),
-            ),
+            const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFCCCCCC)),
             const SizedBox(height: 16),
             Text(
               _error ?? '加载失败',
@@ -185,10 +161,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
             const SizedBox(height: 16),
             TextButton(
               onPressed: _loadPosts,
-              child: const Text(
-                '点击重试',
-                style: TextStyle(color: Color(0xFFFF2442)),
-              ),
+              child: const Text('点击重试', style: TextStyle(color: Color(0xFFFF2442))),
             ),
           ],
         ),
@@ -201,41 +174,23 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.inbox_outlined,
-            size: 48,
-            color: Color(0xFFCCCCCC),
-          ),
+          const Icon(Icons.people_outline, size: 48, color: Color(0xFFCCCCCC)),
           const SizedBox(height: 16),
           const Text(
-            '暂无内容',
+            '还没有关注任何人',
             style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '关注感兴趣的用户，这里会显示他们的动态',
+            style: TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
           ),
           const SizedBox(height: 16),
           TextButton(
             onPressed: _loadPosts,
-            child: const Text(
-              '刷新试试',
-              style: TextStyle(color: Color(0xFFFF2442)),
-            ),
+            child: const Text('刷新试试', style: TextStyle(color: Color(0xFFFF2442))),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLoadMoreIndicator() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFF999999),
-          ),
-        ),
       ),
     );
   }
