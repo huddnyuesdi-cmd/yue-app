@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../widgets/waterfall_feed.dart';
 import 'discover_page.dart';
+import 'home_feed_page.dart';
 import 'notifications_page.dart';
 import 'profile_page.dart';
 import 'publish_page.dart';
@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   Widget _buildHomePage() {
-    return const WaterfallFeed();
+    return const HomeFeedPage();
   }
 
   Widget _buildDiscoverPage() {
