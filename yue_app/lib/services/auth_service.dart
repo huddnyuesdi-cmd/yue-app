@@ -32,12 +32,12 @@ class AuthService {
     return _instance!;
   }
 
-  /// Login with username/email and password.
+  /// Login with email (or username) and password.
   /// Returns the AuthResponse on success.
-  Future<AuthResponse> login(String username, String password) async {
+  Future<AuthResponse> login(String email, String password) async {
     try {
       final response = await _userCenterDio.post('/auth/login', data: {
-        'username': username,
+        'email': email,
         'password': password,
       });
 
