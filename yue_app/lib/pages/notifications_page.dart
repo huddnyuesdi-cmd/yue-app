@@ -126,41 +126,51 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
     return Column(
       children: [
         // Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(20, 12, 16, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 '消息',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF333333),
                 ),
               ),
-              TextButton(
+              TextButton.icon(
                 onPressed: _markAllRead,
-                child: const Text(
+                icon: const Icon(Icons.done_all_rounded, size: 16, color: Color(0xFFFF6B6B)),
+                label: const Text(
                   '全部已读',
                   style: TextStyle(fontSize: 13, color: Color(0xFFFF6B6B)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 ),
               ),
             ],
           ),
         ),
         // Tabs
-        TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFFFF6B6B),
-          unselectedLabelColor: const Color(0xFF999999),
-          indicatorColor: const Color(0xFFFF6B6B),
-          indicatorSize: TabBarIndicatorSize.label,
-          tabs: const [
-            Tab(text: '全部'),
-            Tab(text: '点赞'),
-            Tab(text: '评论'),
-          ],
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFFFF6B6B),
+            unselectedLabelColor: const Color(0xFF999999),
+            indicatorColor: const Color(0xFFFF6B6B),
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 3,
+            dividerColor: Colors.transparent,
+            tabs: const [
+              Tab(text: '全部'),
+              Tab(text: '点赞'),
+              Tab(text: '评论'),
+            ],
+          ),
         ),
         // Content
         Expanded(
@@ -224,9 +234,21 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
           final senderAvatar = notification['sender_avatar'] as String?;
           final senderName = notification['sender_nickname'] as String? ?? notification['sender_name'] as String? ?? '';
 
-          return Container(
-            color: isRead ? Colors.white : const Color(0xFFFFF8F8),
-            child: ListTile(
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isRead ? Colors.white : const Color(0xFFFFF8F8),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               leading: Stack(
                 children: [
@@ -288,6 +310,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
                     style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
                   ),
                 ],
+              ),
               ),
             ),
           );

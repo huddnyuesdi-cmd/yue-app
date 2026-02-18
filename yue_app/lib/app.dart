@@ -10,7 +10,7 @@ class YueMApp extends StatelessWidget {
     return TDTheme(
       data: TDTheme.defaultData(),
       child: MaterialApp(
-        title: 'YueM',
+        title: '汐社',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(

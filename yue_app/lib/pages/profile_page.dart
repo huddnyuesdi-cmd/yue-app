@@ -204,44 +204,60 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFF6B6B),
+            Color(0xFFFF8E8E),
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: const Color(0xFFFF6B6B),
-                child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
-                    ? ClipOval(
-                        child: Image.network(
-                          _communityAvatar!,
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.person,
-                            size: 36,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
-                        ? ClipOval(
-                            child: Image.network(
-                              _user!.avatar!,
-                              width: 72,
-                              height: 72,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.person,
-                                size: 36,
-                                color: Colors.white,
-                              ),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                ),
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
+                      ? ClipOval(
+                          child: Image.network(
+                            _communityAvatar!,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.person,
+                              size: 36,
+                              color: Colors.white,
                             ),
-                          )
-                        : const Icon(Icons.person, size: 36, color: Colors.white),
+                          ),
+                        )
+                      : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
+                          ? ClipOval(
+                              child: Image.network(
+                                _user!.avatar!,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  size: 36,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.person, size: 36, color: Colors.white),
+                ),
               ),
               const Spacer(),
               OutlinedButton(
@@ -259,10 +275,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   }
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF333333),
-                  side: const BorderSide(color: Color(0xFFDDDDDD)),
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
               ),
@@ -273,17 +289,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
                   );
                 },
-                icon: const Icon(Icons.settings_outlined, color: Color(0xFF666666)),
+                icon: Icon(Icons.settings_outlined, color: Colors.white.withValues(alpha: 0.85)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             _communityNickname ?? _user?.displayName ?? '用户',
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
@@ -291,18 +307,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             _communityUsername != null && _communityUsername!.isNotEmpty 
                 ? '@${_communityUsername}' 
                 : '@${_user?.username ?? ''}',
-            style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.75)),
           ),
           if (_communityBio != null && _communityBio!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               _communityBio!,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+              style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 16),
         ],
       ),
     );
@@ -314,19 +329,29 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     final followerCount = _stats['follower_count'] as int? ?? _stats['followers_count'] as int? ?? 0;
     final likeCount = _stats['like_count'] as int? ?? _stats['likes_count'] as int? ?? _stats['total_likes'] as int? ?? 0;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem('$postCount', '笔记'),
-          const SizedBox(width: 32),
+          _buildDivider(),
           _buildStatItem('$followingCount', '关注'),
-          const SizedBox(width: 32),
+          _buildDivider(),
           _buildStatItem('$followerCount', '粉丝'),
-          const SizedBox(width: 32),
+          _buildDivider(),
           _buildStatItem('$likeCount', '获赞'),
         ],
       ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      width: 1,
+      height: 24,
+      color: const Color(0xFFEEEEEE),
     );
   }
 
@@ -398,7 +423,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: Colors.white,
       child: tabBar,
     );
   }

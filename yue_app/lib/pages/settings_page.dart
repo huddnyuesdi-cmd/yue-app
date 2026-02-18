@@ -206,48 +206,101 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: ListView(
         children: [
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Account section
           _buildSectionHeader('账号安全'),
-          _buildMenuItem(
-            icon: Icons.lock_outline,
-            title: '修改密码',
-            onTap: _showChangePasswordDialog,
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _buildMenuItem(
+                icon: Icons.lock_outline_rounded,
+                title: '修改密码',
+                onTap: _showChangePasswordDialog,
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           // General section
           _buildSectionHeader('通用'),
-          _buildMenuItem(
-            icon: Icons.delete_outline,
-            title: '清除缓存',
-            onTap: _clearCache,
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _buildMenuItem(
+                icon: Icons.delete_outline_rounded,
+                title: '清除缓存',
+                onTap: _clearCache,
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           // About section
           _buildSectionHeader('关于'),
-          _buildMenuItem(
-            icon: Icons.info_outline,
-            title: '关于汐社',
-            subtitle: 'v1.0.0',
-            onTap: () {},
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _buildMenuItem(
+                icon: Icons.info_outline_rounded,
+                title: '关于汐社',
+                subtitle: 'v1.0.0',
+                onTap: () {},
+              ),
+            ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 40),
           // Logout button
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: SizedBox(
               width: double.infinity,
-              height: 48,
-              child: OutlinedButton(
+              height: 50,
+              child: ElevatedButton(
                 onPressed: _handleLogout,
-                style: OutlinedButton.styleFrom(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFFFF6B6B),
+                  elevation: 0,
                   side: const BorderSide(color: Color(0xFFFF6B6B)),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text('退出登录', style: TextStyle(fontSize: 16)),
+                child: const Text('退出登录', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ),
           ),
@@ -259,10 +312,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: const EdgeInsets.fromLTRB(20, 0, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+        style: const TextStyle(fontSize: 13, color: Color(0xFF999999), fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -273,22 +326,28 @@ class _SettingsPageState extends State<SettingsPage> {
     String? subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      color: Colors.white,
-      child: ListTile(
-        leading: Icon(icon, size: 22, color: const Color(0xFF666666)),
-        title: Text(title, style: const TextStyle(fontSize: 15, color: Color(0xFF333333))),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (subtitle != null)
-              Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, size: 20, color: Color(0xFFCCCCCC)),
-          ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F7F8),
+          borderRadius: BorderRadius.circular(10),
         ),
-        onTap: onTap,
+        child: Icon(icon, size: 20, color: const Color(0xFF666666)),
       ),
+      title: Text(title, style: const TextStyle(fontSize: 15, color: Color(0xFF333333))),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (subtitle != null)
+            Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF999999))),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCCCCCC)),
+        ],
+      ),
+      onTap: onTap,
     );
   }
 }

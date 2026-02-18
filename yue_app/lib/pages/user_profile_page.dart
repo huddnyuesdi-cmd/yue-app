@@ -83,15 +83,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFF6B6B),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF333333), size: 20),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           nickname,
-          style: const TextStyle(fontSize: 16, color: Color(0xFF333333)),
+          style: const TextStyle(fontSize: 16, color: Colors.white),
         ),
         centerTitle: true,
       ),
@@ -133,55 +133,69 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId) {
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFF6B6B),
+            Color(0xFFFF8E8E),
+          ],
+        ),
+      ),
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: const Color(0xFFFF6B6B),
-                child: avatar.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          avatar,
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.person, size: 36, color: Colors.white),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                ),
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: avatar.isNotEmpty
+                      ? ClipOval(
+                          child: Image.network(
+                            avatar,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.person, size: 36, color: Colors.white),
+                ),
               ),
               const Spacer(),
-              // Follow button
               GestureDetector(
                 onTap: _toggleFollow,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF6B6B),
+                    color: _isFollowing ? Colors.white.withValues(alpha: 0.2) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    _isFollowing ? '已关注' : '关注',
+                    _isFollowing ? '已关注' : '+ 关注',
                     style: TextStyle(
                       fontSize: 14,
-                      color: _isFollowing ? const Color(0xFF999999) : Colors.white,
-                      fontWeight: FontWeight.w500,
+                      color: _isFollowing ? Colors.white : const Color(0xFFFF6B6B),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
               nickname,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
           if (userId.isNotEmpty) ...[
@@ -190,7 +204,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'ID: $userId',
-                style: const TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
+                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
               ),
             ),
           ],
@@ -200,7 +214,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 bio,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
+                style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85), height: 1.4),
               ),
             ),
           ],
@@ -217,15 +231,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem('$postCount', '笔记'),
-          const SizedBox(width: 32),
+          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followingCount', '关注'),
-          const SizedBox(width: 32),
+          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followerCount', '粉丝'),
-          const SizedBox(width: 32),
+          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$likeCount', '获赞'),
         ],
       ),

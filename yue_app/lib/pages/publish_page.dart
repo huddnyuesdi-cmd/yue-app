@@ -116,94 +116,131 @@ class _PublishPageState extends State<PublishPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title input
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: '填写标题，会有更多赞哦~',
-                hintStyle: TextStyle(fontSize: 18, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
-                border: InputBorder.none,
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-              maxLength: 100,
-              maxLines: 2,
+              child: TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  hintText: '填写标题，会有更多赞哦~',
+                  hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                ),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                maxLength: 100,
+                maxLines: 2,
+              ),
             ),
-            const Divider(color: Color(0xFFF0F0F0)),
+            const SizedBox(height: 12),
             // Content input
-            TextField(
-              controller: _contentController,
-              decoration: const InputDecoration(
-                hintText: '添加正文',
-                hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
-                border: InputBorder.none,
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
-              maxLines: null,
-              minLines: 8,
+              child: TextField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  hintText: '添加正文',
+                  hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
+                maxLines: null,
+                minLines: 8,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             // Tags section
-            const Text(
-              '添加标签',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF333333)),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: TextField(
-                      controller: _tagController,
-                      decoration: const InputDecoration(
-                        hintText: '输入标签',
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        isDense: true,
-                      ),
-                      style: const TextStyle(fontSize: 13),
-                      onSubmitted: (_) => _addTag(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _addTag,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF6B6B),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_tags.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: _tags
-                    .map((tag) => Chip(
-                          label: Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFFFF6B6B))),
-                          backgroundColor: const Color(0xFFFFF0F0),
-                          deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFFFF6B6B)),
-                          onDeleted: () => _removeTag(tag),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide.none,
-                          ),
-                        ))
-                    .toList(),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F8),
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '添加标签',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(19),
+                          ),
+                          child: TextField(
+                            controller: _tagController,
+                            decoration: const InputDecoration(
+                              hintText: '输入标签',
+                              hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              isDense: true,
+                            ),
+                            style: const TextStyle(fontSize: 13),
+                            onSubmitted: (_) => _addTag(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _addTag,
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+                            ),
+                            borderRadius: BorderRadius.circular(19),
+                          ),
+                          child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_tags.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: _tags
+                          .map((tag) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF0F0),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFFFF6B6B))),
+                                    const SizedBox(width: 4),
+                                    GestureDetector(
+                                      onTap: () => _removeTag(tag),
+                                      child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFFF6B6B)),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

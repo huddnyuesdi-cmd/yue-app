@@ -704,7 +704,7 @@ class PostService {
   Future<PostListResponse> getFollowingPosts({int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
-      throw Exception('请先登录');
+      return PostListResponse(posts: [], pagination: null);
     }
 
     try {
@@ -740,8 +740,9 @@ class PostService {
       }
 
       return PostListResponse(posts: posts, pagination: pagination);
-    } on DioException catch (e) {
-      _throwDioError(e);
+    } catch (_) {
+      // Gracefully handle server errors (e.g. 500) by returning empty
+      return PostListResponse(posts: [], pagination: null);
     }
   }
 

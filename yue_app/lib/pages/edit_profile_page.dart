@@ -80,42 +80,98 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F8),
       appBar: AppBar(
-        title: const Text('编辑资料'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF333333), size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          '编辑资料',
+          style: TextStyle(fontSize: 16, color: Color(0xFF333333), fontWeight: FontWeight.w600),
+        ),
+        centerTitle: true,
         actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('保存', style: TextStyle(color: Color(0xFFFF6B6B))),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton(
+              onPressed: _isSaving ? null : _save,
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6B6B),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('保存', style: TextStyle(color: Colors.white, fontSize: 13)),
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('昵称', style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nicknameController,
-            decoration: const InputDecoration(
-              hintText: '请输入昵称',
-              border: OutlineInputBorder(),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-          const Text('简介', style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _bioController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: '介绍一下自己吧',
-              border: OutlineInputBorder(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('昵称', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F7F8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _nicknameController,
+                    style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                    decoration: const InputDecoration(
+                      hintText: '请输入昵称',
+                      hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('简介', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F7F8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _bioController,
+                    maxLines: 3,
+                    style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                    decoration: const InputDecoration(
+                      hintText: '介绍一下自己吧',
+                      hintStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

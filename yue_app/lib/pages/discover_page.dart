@@ -133,28 +133,33 @@ class _DiscoverPageState extends State<DiscoverPage> {
     return Column(
       children: [
         // Search bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Container(
-            height: 40,
+            height: 42,
             decoration: BoxDecoration(
               color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(21),
             ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '搜索笔记、用户、标签',
                 hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFBBBBBB), size: 20),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(left: 14, right: 8),
+                  child: Icon(Icons.search_rounded, color: Color(0xFFBBBBBB), size: 22),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 0),
                 suffixIcon: _isSearching
                     ? IconButton(
-                        icon: const Icon(Icons.close, color: Color(0xFF999999), size: 18),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF999999), size: 18),
                         onPressed: _clearSearch,
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(fontSize: 14),
               onSubmitted: (value) {
@@ -180,32 +185,48 @@ class _DiscoverPageState extends State<DiscoverPage> {
         children: [
           // Hot tags
           if (_hotTags.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Text(
-                '热门标签',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B6B),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '热门标签',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 children: _hotTags.map((tag) {
                   final tagName = tag['name'] as String? ?? '';
                   final postCount = tag['post_count'] as int? ?? 0;
                   return GestureDetector(
                     onTap: () => _search(tag: tagName),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F0),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFF5F5), Color(0xFFFFE8E8)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFFD4D4), width: 0.5),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -215,14 +236,21 @@ class _DiscoverPageState extends State<DiscoverPage> {
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFFFF6B6B),
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           if (postCount > 0) ...[
-                            const SizedBox(width: 4),
-                            Text(
-                              '$postCount',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFFFF9999)),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B6B).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$postCount',
+                                style: const TextStyle(fontSize: 10, color: Color(0xFFFF6B6B)),
+                              ),
                             ),
                           ],
                         ],
@@ -234,17 +262,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
             ),
           ],
           // Explore tips
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 32, 16, 16),
-            child: Column(
-              children: [
-                Icon(Icons.explore_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                SizedBox(height: 12),
-                Text(
-                  '搜索发现更多精彩内容',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.explore_outlined, size: 56, color: const Color(0xFFDDDDDD).withValues(alpha: 0.7)),
+                  const SizedBox(height: 12),
+                  const Text(
+                    '搜索发现更多精彩内容',
+                    style: TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

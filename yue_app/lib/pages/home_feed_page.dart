@@ -30,16 +30,27 @@ class _HomeFeedPageState extends State<HomeFeedPage> with SingleTickerProviderSt
       children: [
         // Tab header
         Container(
-          color: Colors.white,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFF333333),
+            labelColor: const Color(0xFFFF6B6B),
             unselectedLabelColor: const Color(0xFF999999),
             labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
             indicatorColor: const Color(0xFFFF6B6B),
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 3,
+            indicatorPadding: const EdgeInsets.only(bottom: 2),
+            dividerColor: Colors.transparent,
             tabs: const [
               Tab(text: '关注'),
               Tab(text: '推荐'),
