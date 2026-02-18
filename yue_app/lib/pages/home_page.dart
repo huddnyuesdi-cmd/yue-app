@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: IndexedStack(
-          index: _currentIndex >= 2 ? _currentIndex : _currentIndex,
+          index: _currentIndex,
           children: _pages,
         ),
       ),
