@@ -64,7 +64,7 @@ class AuthService {
       await _storage.setUserProfile(profileJson);
 
       // Exchange for community token
-      await _tryExchangeCommunityToken(authData.token, userProfileJson: profileJson);
+      await _tryExchangeCommunityToken(authData.token, userProfile: authData.user.toJson());
 
       return authData;
     } on DioException catch (e) {
@@ -113,7 +113,7 @@ class AuthService {
       await _storage.setUserProfile(profileJson);
 
       // Exchange for community token
-      await _tryExchangeCommunityToken(authData.token, userProfileJson: profileJson);
+      await _tryExchangeCommunityToken(authData.token, userProfile: authData.user.toJson());
 
       return authData;
     } on DioException catch (e) {
@@ -175,15 +175,15 @@ class AuthService {
   /// Exchange user center token for community token.
   Future<CommunityTokenResponse> exchangeCommunityToken(
     String userCenterToken, {
-    String? userProfileJson,
+    Map<String, dynamic>? userProfile,
   }) async {
     try {
       final body = <String, dynamic>{
         'user_token': userCenterToken,
       };
 
-      if (userProfileJson != null) {
-        body['user_profile'] = userProfileJson;
+      if (userProfile != null) {
+        body['user_profile'] = userProfile;
       }
 
       final response = await _communityDio.post(
@@ -211,9 +211,9 @@ class AuthService {
   }
 
   /// Try to exchange community token, but don't fail if it doesn't work.
-  Future<void> _tryExchangeCommunityToken(String userCenterToken, {String? userProfileJson}) async {
+  Future<void> _tryExchangeCommunityToken(String userCenterToken, {Map<String, dynamic>? userProfile}) async {
     try {
-      await exchangeCommunityToken(userCenterToken, userProfileJson: userProfileJson);
+      await exchangeCommunityToken(userCenterToken, userProfile: userProfile);
     } catch (_) {
       // Community token exchange is optional; user may need to register
       // on the community platform separately.
