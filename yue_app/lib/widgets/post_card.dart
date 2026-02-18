@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../pages/post_detail_page.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -8,7 +9,15 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PostDetailPage(postId: post.id, initialPost: post),
+          ),
+        );
+      },
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -116,6 +125,7 @@ class PostCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
+import '../models/comment_model.dart';
 import '../models/post_model.dart';
 import 'storage_service.dart';
 
@@ -95,6 +96,416 @@ class PostService {
         default:
           throw Exception('网络请求失败，请稍后重试');
       }
+    }
+  }
+
+  /// Fetch post detail by id.
+  Future<Post> getPostDetail(int postId) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/posts/$postId',
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取帖子详情失败');
+      }
+
+      final postData = data['data'] as Map<String, dynamic>?;
+      if (postData == null) {
+        throw Exception('帖子不存在');
+      }
+
+      return Post.fromJson(postData);
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow; // unreachable but satisfies analyzer
+    }
+  }
+
+  /// Fetch comments for a post.
+  Future<List<Comment>> getPostComments(int postId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/posts/$postId/comments',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取评论失败');
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) return [];
+
+      final commentsJson = responseData['list'] as List? ?? responseData['comments'] as List? ?? [];
+      return commentsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Toggle like on a post.
+  Future<bool> toggleLike(int targetId, {String targetType = 'post'}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.post(
+        '/api/likes',
+        data: {'target_type': targetType, 'target_id': targetId.toString()},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Toggle collect on a post.
+  Future<bool> toggleCollect(int postId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.post(
+        '/api/posts/$postId/collect',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Add a comment.
+  Future<bool> addComment(int postId, String content, {int? parentId}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final body = <String, dynamic>{
+        'post_id': postId.toString(),
+        'content': content,
+      };
+      if (parentId != null) {
+        body['parent_id'] = parentId.toString();
+      }
+
+      final response = await _dio.post(
+        '/api/comments',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Search posts.
+  Future<PostListResponse> searchPosts({
+    String? keyword,
+    String? tag,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      if (keyword != null && keyword.isNotEmpty) {
+        queryParams['keyword'] = keyword;
+      }
+      if (tag != null && tag.isNotEmpty) {
+        queryParams['tag'] = tag;
+      }
+
+      final response = await _dio.get(
+        '/api/search',
+        queryParameters: queryParams,
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '搜索失败');
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['list'] as List? ?? responseData['posts'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get hot tags.
+  Future<List<Map<String, dynamic>>> getHotTags({int limit = 20}) async {
+    try {
+      final response = await _dio.get(
+        '/api/tags/hot',
+        queryParameters: {'limit': limit},
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) return [];
+
+      final tagsData = data['data'];
+      if (tagsData is List) {
+        return tagsData.whereType<Map<String, dynamic>>().toList();
+      }
+      if (tagsData is Map<String, dynamic>) {
+        final list = tagsData['list'] as List? ?? tagsData['tags'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Get user posts.
+  Future<PostListResponse> getUserPosts(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/posts',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取用户笔记失败');
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['list'] as List? ?? responseData['posts'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get user collections.
+  Future<PostListResponse> getUserCollections(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/collections',
+        queryParameters: {'page': page, 'limit': limit},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取收藏列表失败');
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['list'] as List? ?? responseData['posts'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get user likes.
+  Future<PostListResponse> getUserLikes(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/likes',
+        queryParameters: {'page': page, 'limit': limit},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取点赞列表失败');
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['list'] as List? ?? responseData['posts'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+      rethrow;
+    }
+  }
+
+  /// Get user stats.
+  Future<Map<String, dynamic>> getUserStats(int userId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/stats',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) return {};
+
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  void _throwDioError(DioException e) {
+    if (e.response != null) {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        final message = data['message'] as String?;
+        if (message != null && message.isNotEmpty) {
+          throw Exception(message);
+        }
+      }
+      throw Exception('请求失败 (${e.response?.statusCode})');
+    }
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        throw Exception('网络连接超时，请检查网络');
+      case DioExceptionType.connectionError:
+        throw Exception('无法连接服务器，请检查网络');
+      default:
+        throw Exception('网络请求失败，请稍后重试');
     }
   }
 }
