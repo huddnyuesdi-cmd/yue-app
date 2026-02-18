@@ -34,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+        backgroundColor: isError ? const Color(0xFFFF2442) : const Color(0xFF4CAF50),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -124,194 +124,167 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E8E),
-              Color(0xFFFFB4B4),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Top bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+            // Form
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                      onPressed: () => Navigator.pop(context),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '创建账号',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF222222),
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '加入汐社，分享你的校园生活',
+                      style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildInputField(
+                      controller: _emailController,
+                      hintText: '邮箱地址',
+                      prefixIcon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildInputField(
+                      controller: _usernameController,
+                      hintText: '用户名',
+                      prefixIcon: Icons.alternate_email_rounded,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildInputField(
+                      controller: _displayNameController,
+                      hintText: '昵称',
+                      prefixIcon: Icons.badge_outlined,
+                    ),
+                    const SizedBox(height: 14),
+                    _buildInputField(
+                      controller: _passwordController,
+                      hintText: '密码（至少6位）',
+                      prefixIcon: Icons.lock_outline_rounded,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: const Color(0xFFCCCCCC),
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildInputField(
+                      controller: _confirmPasswordController,
+                      hintText: '确认密码',
+                      prefixIcon: Icons.lock_outline_rounded,
+                      obscureText: _obscureConfirm,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: const Color(0xFFCCCCCC),
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(() => _obscureConfirm = !_obscureConfirm);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Register button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF2442),
+                          disabledBackgroundColor: const Color(0xFFFFB4B4),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                '注 册',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Login link
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            '已有账号？',
+                            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Text(
+                              '返回登录',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFFFF2442),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              // Title
-              const Text(
-                '创建账号',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '加入汐社，分享你的校园生活',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Form card
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInputField(
-                          controller: _emailController,
-                          hintText: '邮箱地址',
-                          prefixIcon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildInputField(
-                          controller: _usernameController,
-                          hintText: '用户名',
-                          prefixIcon: Icons.alternate_email_rounded,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildInputField(
-                          controller: _displayNameController,
-                          hintText: '昵称',
-                          prefixIcon: Icons.badge_outlined,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildInputField(
-                          controller: _passwordController,
-                          hintText: '密码（至少6位）',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscurePassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: const Color(0xFFBBBBBB),
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _buildInputField(
-                          controller: _confirmPasswordController,
-                          hintText: '确认密码',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscureConfirm,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirm
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: const Color(0xFFBBBBBB),
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              setState(() => _obscureConfirm = !_obscureConfirm);
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        // Register button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6B6B),
-                              disabledBackgroundColor: const Color(0xFFFFB4B4),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    '注 册',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Login link
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                '已有账号？',
-                                style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-                              ),
-                              GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: const Text(
-                                  '返回登录',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFFFF6B6B),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -338,7 +311,7 @@ class _RegisterPageState extends State<RegisterPage> {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
-          prefixIcon: Icon(prefixIcon, color: const Color(0xFFBBBBBB), size: 22),
+          prefixIcon: Icon(prefixIcon, color: const Color(0xFFCCCCCC), size: 22),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

@@ -189,21 +189,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
               child: Row(
                 children: [
-                  Container(
-                    width: 3,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B6B),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   const Text(
-                    '热门标签',
+                    '🔥 热门标签',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
+                      color: Color(0xFF222222),
                     ),
                   ),
                 ],
@@ -220,13 +211,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
                   return GestureDetector(
                     onTap: () => _search(tag: tagName),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF5F5), Color(0xFFFFE8E8)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFFFD4D4), width: 0.5),
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -235,22 +223,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
                             '#$tagName',
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFFFF6B6B),
-                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF333333),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           if (postCount > 0) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF6B6B).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '$postCount',
-                                style: const TextStyle(fontSize: 10, color: Color(0xFFFF6B6B)),
-                              ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$postCount',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF999999)),
                             ),
                           ],
                         ],
@@ -267,11 +248,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.explore_outlined, size: 56, color: const Color(0xFFDDDDDD).withValues(alpha: 0.7)),
+                  Icon(Icons.explore_outlined, size: 48, color: const Color(0xFFDDDDDD).withValues(alpha: 0.7)),
                   const SizedBox(height: 12),
                   const Text(
                     '搜索发现更多精彩内容',
-                    style: TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+                    style: TextStyle(fontSize: 14, color: Color(0xFFCCCCCC)),
                   ),
                 ],
               ),
@@ -285,7 +266,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Widget _buildSearchResults() {
     if (_isLoading && _searchResults.isEmpty) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFFF6B6B)),
+        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
       );
     }
 
@@ -294,7 +275,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 48, color: Color(0xFFDDDDDD)),
+            Icon(Icons.search_off_rounded, size: 48, color: Color(0xFFDDDDDD)),
             SizedBox(height: 12),
             Text(
               '没有找到相关内容',
@@ -320,7 +301,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6B6B)),
+                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
               ),
             ),
           );

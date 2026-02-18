@@ -123,7 +123,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
 
     return RefreshIndicator(
       onRefresh: _loadPosts,
-      color: const Color(0xFFFF6B6B),
+      color: const Color(0xFF222222),
       child: MasonryGridView.count(
         controller: _scrollController,
         crossAxisCount: 2,
@@ -151,7 +151,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
             height: 32,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              color: Color(0xFFFF6B6B),
+              color: Color(0xFF999999),
             ),
           ),
           SizedBox(height: 16),
@@ -187,7 +187,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
               onPressed: _loadPosts,
               child: const Text(
                 '点击重试',
-                style: TextStyle(color: Color(0xFFFF6B6B)),
+                style: TextStyle(color: Color(0xFFFF2442)),
               ),
             ),
           ],
@@ -216,7 +216,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
             onPressed: _loadPosts,
             child: const Text(
               '刷新试试',
-              style: TextStyle(color: Color(0xFFFF6B6B)),
+              style: TextStyle(color: Color(0xFFFF2442)),
             ),
           ),
         ],
@@ -233,7 +233,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFFFF6B6B),
+            color: Color(0xFF999999),
           ),
         ),
       ),

@@ -107,7 +107,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
 
     if (_posts.isEmpty && _isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFFF6B6B)),
+        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
       );
     }
 
@@ -117,7 +117,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
 
     return RefreshIndicator(
       onRefresh: _loadPosts,
-      color: const Color(0xFFFF6B6B),
+      color: const Color(0xFF222222),
       child: MasonryGridView.count(
         controller: _scrollController,
         crossAxisCount: 2,
@@ -133,7 +133,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6B6B)),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
                 ),
               ),
             );
@@ -161,7 +161,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
             const SizedBox(height: 16),
             TextButton(
               onPressed: _loadPosts,
-              child: const Text('点击重试', style: TextStyle(color: Color(0xFFFF6B6B))),
+              child: const Text('点击重试', style: TextStyle(color: Color(0xFFFF2442))),
             ),
           ],
         ),
@@ -188,7 +188,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
           const SizedBox(height: 16),
           TextButton(
             onPressed: _loadPosts,
-            child: const Text('刷新试试', style: TextStyle(color: Color(0xFFFF6B6B))),
+            child: const Text('刷新试试', style: TextStyle(color: Color(0xFFFF2442))),
           ),
         ],
       ),

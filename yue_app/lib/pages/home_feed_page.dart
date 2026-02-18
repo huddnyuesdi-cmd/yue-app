@@ -15,7 +15,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 2);
   }
 
   @override
@@ -28,31 +28,23 @@ class _HomeFeedPageState extends State<HomeFeedPage> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Tab header
+        // Tab header - clean centered tabs like Xiaohongshu
         Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x08000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
+          color: Colors.white,
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFFFF6B6B),
-            unselectedLabelColor: const Color(0xFF999999),
-            labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-            indicatorColor: const Color(0xFFFF6B6B),
+            labelColor: const Color(0xFF222222),
+            unselectedLabelColor: const Color(0xFFBBBBBB),
+            labelStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.normal),
+            indicatorColor: const Color(0xFFFF2442),
             indicatorSize: TabBarIndicatorSize.label,
-            indicatorWeight: 3,
-            indicatorPadding: const EdgeInsets.only(bottom: 2),
+            indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 20),
             tabs: const [
               Tab(text: '关注'),
+              Tab(text: '发现'),
               Tab(text: '推荐'),
             ],
           ),
@@ -63,6 +55,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> with SingleTickerProviderSt
             controller: _tabController,
             children: const [
               FollowingFeed(),
+              WaterfallFeed(), // Discover feed reuses waterfall
               WaterfallFeed(),
             ],
           ),

@@ -96,7 +96,7 @@ class _PublishPageState extends State<PublishPage> {
             child: TextButton(
               onPressed: _isPublishing ? null : _publish,
               style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B6B),
+                backgroundColor: const Color(0xFFFF2442),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
@@ -202,7 +202,7 @@ class _PublishPageState extends State<PublishPage> {
                           height: 38,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+                              colors: [Color(0xFFFF2442), Color(0xFFFF5C6A)],
                             ),
                             borderRadius: BorderRadius.circular(19),
                           ),
@@ -220,17 +220,17 @@ class _PublishPageState extends State<PublishPage> {
                           .map((tag) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF0F0),
+                                  color: const Color(0xFFF5F5F5),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFFFF6B6B))),
+                                    Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
                                     const SizedBox(width: 4),
                                     GestureDetector(
                                       onTap: () => _removeTag(tag),
-                                      child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFFF6B6B)),
+                                      child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF999999)),
                                     ),
                                   ],
                                 ),

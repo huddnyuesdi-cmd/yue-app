@@ -108,7 +108,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
       case 'like':
       case 'post_like':
       case 'comment_like':
-        return const Color(0xFFFF6B6B);
+        return const Color(0xFFFF2442);
       case 'comment':
       case 'reply':
         return const Color(0xFF4A90E2);
@@ -135,20 +135,19 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
               const Text(
                 '消息',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
+                  color: Color(0xFF222222),
                 ),
               ),
-              TextButton.icon(
+              TextButton(
                 onPressed: _markAllRead,
-                icon: const Icon(Icons.done_all_rounded, size: 16, color: Color(0xFFFF6B6B)),
-                label: const Text(
+                child: const Text(
                   '全部已读',
-                  style: TextStyle(fontSize: 13, color: Color(0xFFFF6B6B)),
+                  style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
               ),
             ],
@@ -159,11 +158,13 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
           color: Colors.white,
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFFFF6B6B),
+            labelColor: const Color(0xFF222222),
             unselectedLabelColor: const Color(0xFF999999),
-            indicatorColor: const Color(0xFFFF6B6B),
+            labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 15),
+            indicatorColor: const Color(0xFFFF2442),
             indicatorSize: TabBarIndicatorSize.label,
-            indicatorWeight: 3,
+            indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
             tabs: const [
               Tab(text: '全部'),
@@ -190,7 +191,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
   Widget _buildNotificationList(String type) {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFFF6B6B)),
+        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
       );
     }
 
@@ -219,7 +220,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
     }
 
     return RefreshIndicator(
-      color: const Color(0xFFFF6B6B),
+      color: const Color(0xFF222222),
       onRefresh: _loadNotifications,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -238,7 +239,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Container(
               decoration: BoxDecoration(
-                color: isRead ? Colors.white : const Color(0xFFFFF8F8),
+                color: isRead ? Colors.white : const Color(0xFFFAFAFA),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -284,7 +285,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
                         height: 8,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFFFF6B6B),
+                          color: Color(0xFFFF2442),
                         ),
                       ),
                     ),

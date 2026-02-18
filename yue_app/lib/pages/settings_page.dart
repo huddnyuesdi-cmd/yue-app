@@ -39,7 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定', style: TextStyle(color: Color(0xFFFF6B6B))),
+            child: const Text('确定', style: TextStyle(color: Color(0xFFFF2442))),
           ),
         ],
       ),
@@ -111,7 +111,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定', style: TextStyle(color: Color(0xFFFF6B6B))),
+            child: const Text('确定', style: TextStyle(color: Color(0xFFFF2442))),
           ),
         ],
       ),
@@ -293,9 +293,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _handleLogout,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFFFF6B6B),
+                  foregroundColor: const Color(0xFFFF2442),
                   elevation: 0,
-                  side: const BorderSide(color: Color(0xFFFF6B6B)),
+                  side: const BorderSide(color: Color(0xFFFF2442)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),

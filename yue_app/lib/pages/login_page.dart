@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+        backgroundColor: isError ? const Color(0xFFFF2442) : const Color(0xFF4CAF50),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -118,157 +118,122 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E8E),
-              Color(0xFFFFB4B4),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height -
-                    MediaQuery.of(context).padding.top -
-                    MediaQuery.of(context).padding.bottom,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 60),
-                    // Logo
-                    _buildLogo(),
-                    const SizedBox(height: 40),
-                    // Login card
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(32),
-                            topRight: Radius.circular(32),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 60),
+                // Logo
+                Center(child: _buildLogo()),
+                const SizedBox(height: 48),
+                // Welcome text
+                const Text(
+                  '欢迎回来',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF222222),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '登录你的账号，发现精彩内容',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                ),
+                const SizedBox(height: 36),
+                // Username field
+                _buildInputField(
+                  controller: _usernameController,
+                  hintText: '用户名 / 邮箱',
+                  prefixIcon: Icons.person_outline_rounded,
+                ),
+                const SizedBox(height: 16),
+                // Password field
+                _buildInputField(
+                  controller: _passwordController,
+                  hintText: '密码',
+                  prefixIcon: Icons.lock_outline_rounded,
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: const Color(0xFFCCCCCC),
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 36),
+                // Login button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF2442),
+                      disabledBackgroundColor: const Color(0xFFFFB4B4),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            '登 录',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2,
+                            ),
                           ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 36, 28, 24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                '欢迎回来',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF333333),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                '登录你的账号，发现精彩内容',
-                                style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-                              ),
-                              const SizedBox(height: 32),
-                              // Username field
-                              _buildInputField(
-                                controller: _usernameController,
-                                hintText: '用户名 / 邮箱',
-                                prefixIcon: Icons.person_outline_rounded,
-                              ),
-                              const SizedBox(height: 16),
-                              // Password field
-                              _buildInputField(
-                                controller: _passwordController,
-                                hintText: '密码',
-                                prefixIcon: Icons.lock_outline_rounded,
-                                obscureText: _obscurePassword,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: const Color(0xFFBBBBBB),
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    setState(() => _obscurePassword = !_obscurePassword);
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              // Login button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 52,
-                                child: ElevatedButton(
-                                  onPressed: _isLoading ? null : _handleLogin,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF6B6B),
-                                    disabledBackgroundColor: const Color(0xFFFFB4B4),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(26),
-                                    ),
-                                  ),
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : const Text(
-                                          '登 录',
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 2,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                              const Spacer(),
-                              // Register link
-                              Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      '还没有账号？',
-                                      style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-                                    ),
-                                    GestureDetector(
-                                      onTap: _goToRegister,
-                                      child: const Text(
-                                        '立即注册',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFFFF6B6B),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Register link
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        '还没有账号？',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                      ),
+                      GestureDetector(
+                        onTap: _goToRegister,
+                        child: const Text(
+                          '立即注册',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFFFF2442),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 40),
+              ],
             ),
           ),
         ),
@@ -280,46 +245,31 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 72,
+          height: 72,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            color: const Color(0xFFFF2442),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: const Center(
             child: Text(
               '汐',
               style: TextStyle(
-                fontSize: 42,
+                fontSize: 38,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFFF6B6B),
+                color: Colors.white,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         const Text(
           '汐社',
           style: TextStyle(
-            fontSize: 26,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF222222),
             letterSpacing: 2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '你的校园图文部落',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.85),
           ),
         ),
       ],
@@ -345,7 +295,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
-          prefixIcon: Icon(prefixIcon, color: const Color(0xFFBBBBBB), size: 22),
+          prefixIcon: Icon(prefixIcon, color: const Color(0xFFCCCCCC), size: 22),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

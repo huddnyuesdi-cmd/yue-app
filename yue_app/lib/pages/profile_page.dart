@@ -177,10 +177,14 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             delegate: _TabBarDelegate(
               TabBar(
                 controller: _tabController,
-                labelColor: const Color(0xFFFF6B6B),
+                labelColor: const Color(0xFF222222),
                 unselectedLabelColor: const Color(0xFF999999),
-                indicatorColor: const Color(0xFFFF6B6B),
+                labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: const TextStyle(fontSize: 15),
+                indicatorColor: const Color(0xFFFF2442),
                 indicatorSize: TabBarIndicatorSize.label,
+                indicatorWeight: 2.5,
+                dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: '笔记'),
                   Tab(text: '收藏'),
@@ -204,30 +208,22 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF6B6B),
-            Color(0xFFFF8E8E),
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              // Avatar
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                  border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
                 ),
                 child: CircleAvatar(
                   radius: 36,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  backgroundColor: const Color(0xFFF5F5F5),
                   child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
                       ? ClipOval(
                           child: Image.network(
@@ -238,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                             errorBuilder: (_, __, ___) => const Icon(
                               Icons.person,
                               size: 36,
-                              color: Colors.white,
+                              color: Color(0xFFCCCCCC),
                             ),
                           ),
                         )
@@ -252,11 +248,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 errorBuilder: (_, __, ___) => const Icon(
                                   Icons.person,
                                   size: 36,
-                                  color: Colors.white,
+                                  color: Color(0xFFCCCCCC),
                                 ),
                               ),
                             )
-                          : const Icon(Icons.person, size: 36, color: Colors.white),
+                          : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                 ),
               ),
               const Spacer(),
@@ -275,45 +271,45 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   }
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  foregroundColor: const Color(0xFF333333),
+                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                onPressed: () {
+              GestureDetector(
+                onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
                   );
                 },
-                icon: Icon(Icons.settings_outlined, color: Colors.white.withValues(alpha: 0.85)),
+                child: const Icon(Icons.settings_outlined, size: 22, color: Color(0xFF666666)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
             _communityNickname ?? _user?.displayName ?? '用户',
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF222222),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             _communityUsername != null && _communityUsername!.isNotEmpty 
-                ? '@${_communityUsername}' 
+                ? '@$_communityUsername' 
                 : '@${_user?.username ?? ''}',
-            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.75)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
           ),
           if (_communityBio != null && _communityBio!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               _communityBio!,
-              style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -380,7 +376,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(color: Color(0xFFFF6B6B)),
+          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
         ),
       );
     }

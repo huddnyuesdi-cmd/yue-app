@@ -99,7 +99,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: TextButton(
               onPressed: _isSaving ? null : _save,
               style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B6B),
+                backgroundColor: const Color(0xFFFF2442),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),

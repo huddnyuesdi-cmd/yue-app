@@ -186,7 +186,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ],
       ),
       body: _isLoading && _post == null
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
           : _error != null && _post == null
               ? Center(child: Text(_error!, style: const TextStyle(color: Color(0xFF999999))))
               : Column(
@@ -233,12 +233,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                           .map((tag) => Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFFFF0F0),
+                                                  color: const Color(0xFFF5F5F5),
                                                   borderRadius: BorderRadius.circular(12),
                                                 ),
                                                 child: Text(
                                                   '#${tag.name}',
-                                                  style: const TextStyle(fontSize: 12, color: Color(0xFFFF6B6B)),
+                                                  style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
                                                 ),
                                               ))
                                           .toList(),
@@ -276,7 +276,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   child: SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6B6B)),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
                                   ),
                                 ),
                               )
@@ -411,7 +411,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     children: [
                                       TextSpan(
                                         text: '${reply.user?.nickname ?? "匿名用户"}: ',
-                                        style: const TextStyle(color: Color(0xFFFF6B6B)),
+                                        style: const TextStyle(color: Color(0xFF666666)),
                                       ),
                                       TextSpan(text: reply.content),
                                     ],
@@ -469,7 +469,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           _buildActionButton(
             icon: _post?.liked == true ? Icons.favorite : Icons.favorite_border,
             label: '${_post?.likeCount ?? 0}',
-            color: _post?.liked == true ? const Color(0xFFFF6B6B) : const Color(0xFF999999),
+            color: _post?.liked == true ? const Color(0xFFFF2442) : const Color(0xFF999999),
             onTap: _handleLike,
           ),
           _buildActionButton(

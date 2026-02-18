@@ -20,12 +20,12 @@ class PostCard extends StatelessWidget {
       child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -38,8 +38,8 @@ class PostCard extends StatelessWidget {
           if (post.coverImage != null && post.coverImage!.isNotEmpty)
             ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
               ),
               child: AspectRatio(
                 aspectRatio: _getImageAspectRatio(),
@@ -63,7 +63,7 @@ class PostCard extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: const Color(0xFFFF6B6B).withValues(alpha: 0.5),
+                            color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -114,14 +114,14 @@ class PostCard extends StatelessWidget {
                     Icon(
                       post.liked ? Icons.favorite : Icons.favorite_border,
                       size: 14,
-                      color: post.liked ? const Color(0xFFFF6B6B) : const Color(0xFFCCCCCC),
+                      color: post.liked ? const Color(0xFFFF2442) : const Color(0xFFCCCCCC),
                     ),
                     const SizedBox(width: 3),
                     Text(
                       _formatCount(post.likeCount),
                       style: TextStyle(
                         fontSize: 11,
-                        color: post.liked ? const Color(0xFFFF6B6B) : const Color(0xFFCCCCCC),
+                        color: post.liked ? const Color(0xFFFF2442) : const Color(0xFFCCCCCC),
                       ),
                     ),
                   ],

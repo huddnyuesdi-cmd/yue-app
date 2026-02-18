@@ -83,20 +83,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFF6B6B),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           nickname,
-          style: const TextStyle(fontSize: 16, color: Colors.white),
+          style: const TextStyle(fontSize: 16, color: Color(0xFF222222), fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
           : CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId)),
@@ -133,17 +133,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF6B6B),
-            Color(0xFFFF8E8E),
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       child: Column(
         children: [
           Row(
@@ -151,11 +142,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2.5),
+                  border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
                 ),
                 child: CircleAvatar(
                   radius: 36,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  backgroundColor: const Color(0xFFF5F5F5),
                   child: avatar.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
@@ -163,10 +154,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             width: 72,
                             height: 72,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Colors.white),
+                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                           ),
                         )
-                      : const Icon(Icons.person, size: 36, color: Colors.white),
+                      : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                 ),
               ),
               const Spacer(),
@@ -175,14 +166,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _isFollowing ? Colors.white.withValues(alpha: 0.2) : Colors.white,
+                    color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     _isFollowing ? '已关注' : '+ 关注',
                     style: TextStyle(
                       fontSize: 14,
-                      color: _isFollowing ? Colors.white : const Color(0xFFFF6B6B),
+                      color: _isFollowing ? const Color(0xFF999999) : Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -190,21 +181,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
               nickname,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
             ),
           ),
           if (userId.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'ID: $userId',
-                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
+                style: const TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
               ),
             ),
           ],
@@ -214,7 +205,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               alignment: Alignment.centerLeft,
               child: Text(
                 bio,
-                style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85), height: 1.4),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
               ),
             ),
           ],
