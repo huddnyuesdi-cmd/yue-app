@@ -1,0 +1,20 @@
+# Flutter/Dart
+yue_app/.dart_tool/
+yue_app/.flutter-plugins
+yue_app/.flutter-plugins-dependencies
+yue_app/build/
+yue_app/pubspec.lock
+yue_app/.packages
+yue_app/.pub-cache/
+yue_app/.pub/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
