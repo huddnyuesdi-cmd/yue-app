@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User API 示例程序</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { margin-bottom: 1rem; }
+        .config-form { max-width: 600px; }
+        .result-box { 
+            background-color: #1e1e1e; 
+            color: #d4d4d4; 
+            padding: 1rem; 
+            border-radius: 0.5rem; 
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .token-display {
+            background-color: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .token-value {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+        .section-title {
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .api-card {
+            transition: transform 0.2s;
+        }
+        .api-card:hover {
+            transform: translateY(-2px);
+        }
+        /* Slide captcha styles */
+        .slide-captcha-container {
+            position: relative;
+            display: inline-block;
+            user-select: none;
+        }
+        .slide-captcha-bg {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        .slide-captcha-thumb {
+            position: absolute;
+            cursor: grab;
+            z-index: 10;
+        }
+        .slide-captcha-thumb:active {
+            cursor: grabbing;
+        }
+        .slide-captcha-track {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to right, #e0e0e0, #f5f5f5);
+            border-radius: 20px;
+            position: relative;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .slide-captcha-slider {
+            width: 50px;
+            height: 36px;
+            background: linear-gradient(to bottom, #4CAF50, #45a049);
+            border-radius: 18px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .slide-captcha-slider:active {
+            cursor: grabbing;
+            background: linear-gradient(to bottom, #45a049, #3d8b40);
+        }
+        .slide-captcha-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-key me-2"></i>User API 示例程序
+            </span>
+            <div class="d-flex">
+                {{if .Config.ServerURL}}
+                <button class="btn btn-outline-light btn-sm me-2" onclick="openBrowserTo('login')">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>登录页面
+                </button>
+                <button class="btn btn-outline-light btn-sm me-2" onclick="openBrowserTo('profile')">
+                    <i class="bi bi-person me-1"></i>个人资料
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="openBrowserTo('register')">
+                    <i class="bi bi-person-plus me-1"></i>注册
+                </button>
+                {{end}}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Configuration Section -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-gear me-2"></i>配置设置
+            </div>
+            <div class="card-body">
+                <form action="/config" method="POST" class="config-form">
+                    <div class="mb-3">
+                        <label for="server_url" class="form-label">服务器地址</label>
+                        <input type="url" class="form-control" id="server_url" name="server_url" 
+                               value="{{.Config.ServerURL}}" placeholder="https://login.example.com" required>
+                        <div class="form-text">Login Service 的地址</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">用户ID</label>
+                        <input type="number" class="form-control" id="user_id" name="user_id" 
+                               value="{{if .Config.UserID}}{{.Config.UserID}}{{end}}" placeholder="12345" required>
+                        <div class="form-text">您的用户ID（必填，用于API认证）</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_api_key" class="form-label">API 密钥</label>
+                        <input type="text" class="form-control" id="user_api_key" name="user_api_key" 
+                               value="{{.Config.UserAPIKey}}" placeholder="您的个人API密钥" required>
+                        <div class="form-text">从个人资料页面获取的API密钥</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i>保存配置
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Username/Password Login Section -->
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-person-lock me-2"></i>用户名密码登录
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="login_email" class="form-label">用户名/邮箱</label>
+                            <input type="text" class="form-control" id="login_email" placeholder="输入用户名或邮箱">
+                        </div>
+                        <div class="mb-3">
+                            <label for="login_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="login_password" placeholder="输入密码">
+                        </div>
+                        <div id="captcha-container" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">验证码</label>
+                                <div id="captcha-display" class="border rounded p-2 mb-2 text-center" style="min-height: 60px; background-color: #f8f9fa;">
+                                    <span class="text-muted">点击下方按钮获取验证码</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <input type="number" class="form-control" id="captcha_position" placeholder="验证码答案" style="max-width: 150px;">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshCaptcha()">
+                                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                                    </button>
+                                </div>
+                                <input type="hidden" id="captcha_id">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success" onclick="doLogin()">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>登录
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="checkCaptchaStatus()">
+                                <i class="bi bi-shield-check me-2"></i>检查验证码
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle me-2"></i>使用说明</h6>
+                            <ol class="mb-0 small">
+                                <li>首先配置服务器地址</li>
+                                <li>点击"检查验证码"查看是否需要验证</li>
+                                <li>如果需要验证码，会自动加载验证码</li>
+                                <li>输入用户名/邮箱、密码和验证码</li>
+                                <li>点击登录获取JWT Token</li>
+                            </ol>
+                        </div>
+                        <div id="login-result" class="mt-3" style="display: none;">
+                            <div class="alert" id="login-alert"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Section -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-person-plus me-2"></i>用户注册
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="reg_email" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="reg_email" placeholder="输入邮箱地址">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg_username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="reg_username" placeholder="输入用户名">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="reg_password" placeholder="输入密码">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg_display_name" class="form-label">显示名称 <span class="text-muted">(可选)</span></label>
+                            <input type="text" class="form-control" id="reg_display_name" placeholder="输入显示名称">
+                        </div>
+                        <div id="reg-captcha-container" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">验证码</label>
+                                <div id="reg-captcha-display" class="border rounded p-2 mb-2 text-center" style="min-height: 60px; background-color: #f8f9fa;">
+                                    <span class="text-muted">点击下方按钮获取验证码</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <input type="number" class="form-control" id="reg_captcha_position" placeholder="验证码答案" style="max-width: 150px;">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshRegCaptcha()">
+                                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                                    </button>
+                                </div>
+                                <input type="hidden" id="reg_captcha_id">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-info text-white" onclick="doRegister()">
+                                <i class="bi bi-person-plus me-2"></i>注册
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="checkRegCaptchaStatus()">
+                                <i class="bi bi-shield-check me-2"></i>检查验证码
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle me-2"></i>使用说明</h6>
+                            <ol class="mb-0 small">
+                                <li>首先配置服务器地址</li>
+                                <li>点击"检查验证码"查看是否需要验证</li>
+                                <li>如果需要验证码，会自动加载验证码</li>
+                                <li>输入邮箱、用户名、密码</li>
+                                <li>点击注册创建新账户并获取JWT Token</li>
+                            </ol>
+                        </div>
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            注册API: <code>POST /api/auth/register</code><br>
+                            请求参数: <code>email</code>, <code>username</code>, <code>password</code>, <code>display_name</code>(可选), <code>captcha_id</code>, <code>captcha_position</code>
+                        </div>
+                        <div id="register-result" class="mt-3" style="display: none;">
+                            <div class="alert" id="register-alert"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{if .IsConfigured}}
+        <!-- API Key Authentication Section -->
+        <h5 class="section-title mt-4"><i class="bi bi-key me-2"></i>API Key 认证操作</h5>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-person me-2"></i>用户资料
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用API密钥获取用户资料</p>
+                        <button class="btn btn-outline-primary w-100" onclick="fetchData('profile')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取资料
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-wallet2 me-2"></i>账户余额
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用API密钥获取余额信息</p>
+                        <button class="btn btn-outline-success w-100" onclick="fetchData('balance')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取余额
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-warning">
+                        <i class="bi bi-key me-2"></i>获取Token
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">用API密钥换取JWT访问令牌</p>
+                        <button class="btn btn-outline-warning w-100" onclick="fetchData('token')">
+                            <i class="bi bi-arrow-repeat me-2"></i>获取Token
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JWT Token Section -->
+        <h5 class="section-title mt-4"><i class="bi bi-shield-check me-2"></i>JWT Token 认证操作 <span id="token-status" class="badge bg-secondary">未获取Token</span></h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-person-badge me-2"></i>JWT资料
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取用户资料</p>
+                        <button class="btn btn-outline-info w-100 jwt-btn" onclick="fetchJWTData('profile')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-envelope me-2"></i>消息列表
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取消息列表</p>
+                        <button class="btn btn-outline-info w-100 jwt-btn" onclick="fetchJWTData('messages')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-bell me-2"></i>未读数量
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取未读消息数</p>
+                        <button class="btn btn-outline-info w-100 jwt-btn" onclick="fetchJWTData('unread-count')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-journal-text me-2"></i>余额记录
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取余额变动</p>
+                        <button class="btn btn-outline-info w-100 jwt-btn" onclick="fetchJWTData('balance-logs')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- More JWT Operations -->
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-wallet me-2"></i>账户余额
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取余额信息</p>
+                        <button class="btn btn-outline-success w-100 jwt-btn" onclick="fetchJWTData('balance')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-purple text-white" style="background-color: #6f42c1;">
+                        <i class="bi bi-link-45deg me-2"></i>第三方绑定
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取绑定状态</p>
+                        <button class="btn btn-outline-secondary w-100 jwt-btn" onclick="fetchJWTData('third-party-status')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-dark text-white">
+                        <i class="bi bi-credit-card me-2"></i>支付订单
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT获取支付记录</p>
+                        <button class="btn btn-outline-dark w-100 jwt-btn" onclick="fetchJWTData('payment-orders')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-danger text-white">
+                        <i class="bi bi-check2-all me-2"></i>全部已读
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT标记全部已读</p>
+                        <button class="btn btn-outline-danger w-100 jwt-btn" onclick="fetchJWTData('read-all-messages')">
+                            <i class="bi bi-check-circle me-2"></i>执行
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIP and Recharge Section -->
+        <h5 class="section-title mt-4"><i class="bi bi-gem me-2"></i>VIP 与充值操作</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-warning">
+                        <i class="bi bi-star-fill me-2"></i>VIP等级
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">获取可购买的VIP等级列表</p>
+                        <button class="btn btn-outline-warning w-100" onclick="fetchData('vip-levels')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-currency-dollar me-2"></i>充值设置
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">获取充值选项和配置</p>
+                        <button class="btn btn-outline-success w-100" onclick="fetchData('recharge-settings')">
+                            <i class="bi bi-arrow-down-circle me-2"></i>获取
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header text-white" style="background-color: #ffd700;">
+                        <i class="bi bi-gem me-2"></i>购买VIP
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT购买VIP会员</p>
+                        <button class="btn btn-outline-warning w-100 jwt-btn" onclick="showPurchaseVIPModal()">
+                            <i class="bi bi-cart-plus me-2"></i>购买
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 api-card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-wallet-fill me-2"></i>余额充值
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small">使用JWT充值账户余额</p>
+                        <button class="btn btn-outline-primary w-100 jwt-btn" onclick="showRechargeModal()">
+                            <i class="bi bi-plus-circle me-2"></i>充值
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-terminal me-2"></i>API 响应结果</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearResult()">
+                    <i class="bi bi-trash"></i> 清空
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2 text-muted">正在请求API...</p>
+                </div>
+                <div id="result" class="result-box" style="display: none;"></div>
+                <div id="token-result" style="display: none;">
+                    <div class="token-display">
+                        <h6><i class="bi bi-shield-check me-2"></i>JWT Access Token</h6>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">访问令牌：</label>
+                            <div class="token-value p-2 bg-white border rounded" id="access-token"></div>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="copyToken()">
+                                <i class="bi bi-clipboard"></i> 复制Token
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>用户ID：</strong><span id="token-user-id"></span></p>
+                                <p class="mb-1"><strong>用户名：</strong><span id="token-username"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>邮箱：</strong><span id="token-email"></span></p>
+                                <p class="mb-1"><strong>有效期：</strong><span id="token-expires"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="placeholder" class="text-center text-muted py-4">
+                    <i class="bi bi-arrow-up-circle" style="font-size: 2rem;"></i>
+                    <p class="mt-2">点击上方按钮获取数据</p>
+                </div>
+            </div>
+        </div>
+        {{else}}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            请先完成配置后再使用API功能。您需要配置服务器地址、用户ID和API密钥。
+        </div>
+        {{end}}
+
+        <!-- API Documentation -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-book me-2"></i>API 文档
+            </div>
+            <div class="card-body">
+                <h6>认证方式</h6>
+                <p>所有API请求需要在HTTP Header中携带以下两个参数：</p>
+                <ul>
+                    <li><code>X-User-API-Key</code>: 您的个人API密钥</li>
+                    <li><code>X-User-ID</code>: 您的用户ID</li>
+                </ul>
+                
+                <h6 class="mt-4">API Key 认证端点</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>端点</th>
+                            <th>方法</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/user-api/profile</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取用户资料</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/user-api/balance</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取余额和VIP信息</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/user-api/token</code></td>
+                            <td><span class="badge bg-warning text-dark">POST</span></td>
+                            <td>用API密钥换取JWT访问令牌</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h6 class="mt-4">JWT Token 认证端点</h6>
+                <p>获取Token后，可以使用 <code>Authorization: Bearer {token}</code> 访问以下端点：</p>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>端点</th>
+                            <th>方法</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/auth/profile</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取用户资料</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/auth/profile</code></td>
+                            <td><span class="badge bg-primary">PUT</span></td>
+                            <td>更新用户资料</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/auth/balance</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取账户余额</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/messages</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取消息列表</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/messages/unread-count</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取未读消息数</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/messages/read-all</code></td>
+                            <td><span class="badge bg-warning text-dark">POST</span></td>
+                            <td>标记全部消息已读</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/auth/user-logs/balance</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取余额变动记录</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/auth/user-logs/payment-orders</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取支付订单记录</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/auth/third-party-status</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取第三方账号绑定状态</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/payment/create</code></td>
+                            <td><span class="badge bg-warning text-dark">POST</span></td>
+                            <td>创建支付订单（VIP购买/余额充值）</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h6 class="mt-4">公开API端点（无需认证）</h6>
+                <p>以下为服务端公开API，本演示程序也提供了对应的代理端点：</p>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>服务端端点</th>
+                            <th>演示程序端点</th>
+                            <th>方法</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/vip-levels</code></td>
+                            <td><code>/api/vip-levels</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取可购买的VIP等级列表</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/recharge-settings</code></td>
+                            <td><code>/api/recharge-settings</code></td>
+                            <td><span class="badge bg-success">GET</span></td>
+                            <td>获取充值设置选项</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h6 class="mt-4">演示程序 JWT 扩展端点</h6>
+                <p>以下端点仅在本演示程序中可用，用于简化VIP购买和余额充值操作：</p>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>端点</th>
+                            <th>方法</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/jwt/purchase-vip</code></td>
+                            <td><span class="badge bg-warning text-dark">POST</span></td>
+                            <td>使用JWT购买VIP会员</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/jwt/recharge</code></td>
+                            <td><span class="badge bg-warning text-dark">POST</span></td>
+                            <td>使用JWT充值账户余额</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIP Purchase Modal -->
+    <div class="modal fade" id="purchaseVIPModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="bi bi-gem me-2"></i>购买VIP</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="vip_level" class="form-label">VIP等级</label>
+                        <select class="form-select" id="vip_level">
+                            <option value="1">VIP 1</option>
+                            <option value="2">VIP 2</option>
+                            <option value="3">VIP 3</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="vip_duration" class="form-label">时长（天）</label>
+                        <input type="number" class="form-control" id="vip_duration" value="30" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="vip_amount" class="form-label">金额（元）</label>
+                        <input type="number" class="form-control" id="vip_amount" step="0.01" min="0.01" value="9.9">
+                    </div>
+                    <div class="mb-3">
+                        <label for="vip_payment_method" class="form-label">支付方式</label>
+                        <select class="form-select" id="vip_payment_method">
+                            <option value="alipay">支付宝</option>
+                            <option value="wechat">微信支付</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-warning" onclick="doPurchaseVIP()">
+                        <i class="bi bi-cart-plus me-2"></i>确认购买
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recharge Modal -->
+    <div class="modal fade" id="rechargeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-wallet-fill me-2"></i>余额充值</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="recharge_amount" class="form-label">充值金额（元）</label>
+                        <input type="number" class="form-control" id="recharge_amount" step="0.01" min="1" value="10">
+                        <div class="form-text">最低充值金额：1元</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">快捷选择</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRechargeAmount(10)">10元</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRechargeAmount(50)">50元</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRechargeAmount(100)">100元</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRechargeAmount(200)">200元</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setRechargeAmount(500)">500元</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recharge_payment_method" class="form-label">支付方式</label>
+                        <select class="form-select" id="recharge_payment_method">
+                            <option value="alipay">支付宝</option>
+                            <option value="wechat">微信支付</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="doRecharge()">
+                        <i class="bi bi-plus-circle me-2"></i>确认充值
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center text-muted py-4">
+        <small>User API Demo - Port {{.Config.Port}}</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let hasToken = {{if .HasToken}}true{{else}}false{{end}};
+        
+        // Update token status on page load
+        updateTokenStatus();
+        
+        function updateTokenStatus() {
+            const statusBadge = document.getElementById('token-status');
+            if (hasToken) {
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = '已获取Token';
+            } else {
+                statusBadge.className = 'badge bg-secondary';
+                statusBadge.textContent = '未获取Token';
+            }
+        }
+
+        async function openBrowserTo(target) {
+            try {
+                const response = await fetch('/open-browser?target=' + target);
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+
+        async function fetchData(type) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const tokenResult = document.getElementById('token-result');
+            const placeholder = document.getElementById('placeholder');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            tokenResult.style.display = 'none';
+            placeholder.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/' + type);
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (type === 'token' && data.success) {
+                    // Special display for token
+                    tokenResult.style.display = 'block';
+                    document.getElementById('access-token').textContent = data.data.access_token;
+                    document.getElementById('token-user-id').textContent = data.data.user_id;
+                    document.getElementById('token-username').textContent = data.data.username;
+                    document.getElementById('token-email').textContent = data.data.email;
+                    document.getElementById('token-expires').textContent = Math.floor(data.data.expires_in / 3600) + ' 小时';
+                    hasToken = true;
+                    updateTokenStatus();
+                } else {
+                    result.style.display = 'block';
+                    result.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = '请求失败: ' + error.message;
+            }
+        }
+
+        async function fetchJWTData(type) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const tokenResult = document.getElementById('token-result');
+            const placeholder = document.getElementById('placeholder');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            tokenResult.style.display = 'none';
+            placeholder.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/jwt/' + type);
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = '请求失败: ' + error.message;
+            }
+        }
+        
+        function clearResult() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('token-result').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+        }
+        
+        function copyToken() {
+            const token = document.getElementById('access-token').textContent;
+            navigator.clipboard.writeText(token).then(() => {
+                alert('Token已复制到剪贴板');
+            });
+        }
+
+        // Captcha and Login functions
+        let captchaEnabled = false;
+        let captchaMode = 'simple';
+
+        async function checkCaptchaStatus() {
+            try {
+                const response = await fetch('/api/captcha/status');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    captchaEnabled = data.data.enabled;
+                    captchaMode = data.data.mode || 'simple';
+                    
+                    if (captchaEnabled) {
+                        document.getElementById('captcha-container').style.display = 'block';
+                        showLoginResult('验证码已启用 (模式: ' + captchaMode + ')，正在获取验证码...', 'info');
+                        await refreshCaptcha();
+                    } else {
+                        document.getElementById('captcha-container').style.display = 'none';
+                        showLoginResult('验证码未启用，可直接登录', 'success');
+                    }
+                } else {
+                    showLoginResult('检查验证码状态失败: ' + (data.error || '未知错误'), 'danger');
+                }
+            } catch (error) {
+                showLoginResult('检查验证码状态失败: ' + error.message, 'danger');
+            }
+        }
+
+        async function refreshCaptcha() {
+            const captchaDisplay = document.getElementById('captcha-display');
+            captchaDisplay.innerHTML = '<span class="text-muted">正在加载验证码...</span>';
+            
+            try {
+                const response = await fetch('/api/captcha/generate', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const captcha = data.data;
+                    
+                    if (!captcha.enabled) {
+                        captchaDisplay.innerHTML = '<span class="text-success">验证码未启用</span>';
+                        document.getElementById('captcha-container').style.display = 'none';
+                        captchaEnabled = false;
+                        return;
+                    }
+                    
+                    document.getElementById('captcha_id').value = captcha.id;
+                    captchaMode = captcha.mode || 'simple';
+                    
+                    // Store captcha data for slide mode
+                    if (captcha.mode === 'slide') {
+                        window.slideCaptchaData = {
+                            imageWidth: captcha.image_width || 300,
+                            imageHeight: captcha.image_height || 200,
+                            thumbX: captcha.thumb_x || 0,
+                            thumbY: captcha.thumb_y || 0
+                        };
+                    }
+                    
+                    // Display captcha based on mode
+                    if (captcha.mode === 'simple') {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<p class="mb-2">请点击图中的: <strong>' + captcha.target + '</strong></p>' +
+                            '<p class="small text-muted">输入目标位置 (0-based index)</p>' +
+                            '</div>';
+                    } else if (captcha.mode === 'slide') {
+                        const imgWidth = captcha.image_width || 300;
+                        const imgHeight = captcha.image_height || 200;
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<div class="slide-captcha-container" id="slide-captcha-box" style="width: ' + imgWidth + 'px;">' +
+                            '<img src="' + captcha.image + '" class="slide-captcha-bg" id="slide-bg" style="width: ' + imgWidth + 'px; height: ' + imgHeight + 'px;">' +
+                            '<img src="' + captcha.thumb_image + '" class="slide-captcha-thumb" id="slide-thumb" style="left: ' + captcha.thumb_x + 'px; top: ' + captcha.thumb_y + 'px;">' +
+                            '</div>' +
+                            '<div class="slide-captcha-track" id="slide-track" style="width: ' + imgWidth + 'px;">' +
+                            '<div class="slide-captcha-hint">← 拖动滑块 →</div>' +
+                            '<div class="slide-captcha-slider" id="slide-slider"><i class="bi bi-arrows"></i></div>' +
+                            '</div>' +
+                            '<p class="small text-muted mt-2">当前位置X: <span id="slide-position">' + captcha.thumb_x + '</span></p>' +
+                            '</div>';
+                        
+                        // Initialize slider after DOM update
+                        setTimeout(() => initSlideCapture(imgWidth, captcha.thumb_x), 50);
+                    } else if (captcha.mode === 'click') {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<img src="' + captcha.image + '" style="max-width: 100%; height: auto;" class="mb-2">' +
+                            '<p class="small text-muted">输入点击位置</p>' +
+                            '</div>';
+                    } else if (captcha.mode === 'rotate') {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<img src="' + captcha.image + '" style="max-width: 100%; height: auto;" class="mb-2">' +
+                            '<p class="small text-muted">输入旋转角度</p>' +
+                            '</div>';
+                    } else {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<p>验证码模式: ' + captcha.mode + '</p>' +
+                            '<p class="small text-muted">请输入验证码答案</p>' +
+                            '</div>';
+                    }
+                    
+                    showLoginResult('验证码已加载 (ID: ' + captcha.id.substring(0, 8) + '...)', 'info');
+                } else {
+                    captchaDisplay.innerHTML = '<span class="text-danger">获取验证码失败</span>';
+                    showLoginResult('获取验证码失败: ' + (data.error || '未知错误'), 'danger');
+                }
+            } catch (error) {
+                captchaDisplay.innerHTML = '<span class="text-danger">获取验证码失败</span>';
+                showLoginResult('获取验证码失败: ' + error.message, 'danger');
+            }
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('login_email').value;
+            const password = document.getElementById('login_password').value;
+            
+            if (!email || !password) {
+                showLoginResult('请输入用户名/邮箱和密码', 'warning');
+                return;
+            }
+            
+            let captchaId = '';
+            
+            // Verify captcha first if enabled
+            if (captchaEnabled) {
+                captchaId = document.getElementById('captcha_id').value;
+                const captchaPosition = parseInt(document.getElementById('captcha_position').value);
+                
+                if (!captchaId) {
+                    showLoginResult('请先获取验证码', 'warning');
+                    return;
+                }
+                
+                if (isNaN(captchaPosition)) {
+                    showLoginResult('请输入验证码答案', 'warning');
+                    return;
+                }
+                
+                showLoginResult('正在验证验证码...', 'info');
+                
+                // Build verify data based on captcha mode
+                let verifyData = {
+                    id: captchaId
+                };
+                
+                if (captchaMode === 'slide') {
+                    // Slide mode requires answer.x format
+                    verifyData.answer = { x: captchaPosition };
+                } else if (captchaMode === 'simple') {
+                    // Simple mode uses position
+                    verifyData.position = captchaPosition;
+                } else {
+                    // Default to position for backward compatibility
+                    verifyData.position = captchaPosition;
+                }
+                
+                try {
+                    const verifyResponse = await fetch('/api/captcha/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(verifyData)
+                    });
+                    const verifyResult = await verifyResponse.json();
+                    
+                    if (!verifyResult.success) {
+                        showLoginResult('验证码验证失败: ' + (verifyResult.message || '请重试'), 'danger');
+                        await refreshCaptcha();
+                        return;
+                    }
+                } catch (error) {
+                    showLoginResult('验证码验证失败: ' + error.message, 'danger');
+                    await refreshCaptcha();
+                    return;
+                }
+            }
+            
+            showLoginResult('正在登录...', 'info');
+            
+            const loginData = {
+                email: email,
+                password: password
+            };
+            
+            // Add verified captcha_id for login
+            if (captchaEnabled && captchaId) {
+                loginData.captcha_id = captchaId;
+            }
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginData)
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    hasToken = true;
+                    updateTokenStatus();
+                    
+                    let msg = '登录成功！';
+                    if (data.data && data.data.user) {
+                        msg += ' 欢迎, ' + (data.data.user.display_name || data.data.user.username);
+                    }
+                    showLoginResult(msg, 'success');
+                    
+                    // Display token info
+                    if (data.data && data.data.token) {
+                        document.getElementById('result').style.display = 'block';
+                        document.getElementById('result').textContent = JSON.stringify(data.data, null, 2);
+                        document.getElementById('placeholder').style.display = 'none';
+                    }
+                } else {
+                    showLoginResult('登录失败: ' + (data.error || data.message || '未知错误'), 'danger');
+                    // Refresh captcha on failure
+                    if (captchaEnabled) {
+                        await refreshCaptcha();
+                    }
+                }
+            } catch (error) {
+                showLoginResult('登录失败: ' + error.message, 'danger');
+                // Refresh captcha on error
+                if (captchaEnabled) {
+                    await refreshCaptcha();
+                }
+            }
+        }
+
+        function initSlideCapture(trackWidth, initialX) {
+            const slider = document.getElementById('slide-slider');
+            const thumb = document.getElementById('slide-thumb');
+            const track = document.getElementById('slide-track');
+            const positionDisplay = document.getElementById('slide-position');
+            const captchaInput = document.getElementById('captcha_position');
+            
+            if (!slider || !track) return;
+            
+            const sliderWidth = 50;
+            const maxX = trackWidth - sliderWidth - 4; // 4 for padding
+            let isDragging = false;
+            let startX = 0;
+            let currentX = initialX || 0;
+            
+            // Set initial position
+            updatePosition(currentX);
+            
+            function updatePosition(x) {
+                // Constrain to track bounds
+                x = Math.max(0, Math.min(x, maxX));
+                currentX = x;
+                
+                // Update slider position
+                slider.style.left = (x + 2) + 'px';
+                
+                // Update thumb position on image
+                if (thumb && window.slideCaptchaData) {
+                    thumb.style.left = x + 'px';
+                }
+                
+                // Update display and input
+                const roundedX = Math.round(x);
+                if (positionDisplay) positionDisplay.textContent = roundedX;
+                if (captchaInput) captchaInput.value = roundedX;
+            }
+            
+            function onMouseDown(e) {
+                isDragging = true;
+                startX = (e.clientX || e.touches[0].clientX) - currentX;
+                slider.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+            
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                if (clientX === undefined) return;
+                const newX = clientX - startX;
+                updatePosition(newX);
+            }
+            
+            function onMouseUp() {
+                if (isDragging) {
+                    isDragging = false;
+                    slider.style.cursor = 'grab';
+                }
+            }
+            
+            // Mouse events
+            slider.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            
+            // Touch events for mobile
+            slider.addEventListener('touchstart', onMouseDown, { passive: false });
+            document.addEventListener('touchmove', onMouseMove, { passive: false });
+            document.addEventListener('touchend', onMouseUp);
+            
+            // Also allow dragging the thumb directly on the image
+            if (thumb) {
+                thumb.addEventListener('mousedown', onMouseDown);
+                thumb.addEventListener('touchstart', onMouseDown, { passive: false });
+            }
+        }
+
+        function showLoginResult(message, type) {
+            const loginResult = document.getElementById('login-result');
+            const loginAlert = document.getElementById('login-alert');
+            loginResult.style.display = 'block';
+            loginAlert.className = 'alert alert-' + type;
+            loginAlert.textContent = message;
+        }
+
+        // Registration functions
+        let regCaptchaEnabled = false;
+        let regCaptchaMode = 'simple';
+
+        async function checkRegCaptchaStatus() {
+            try {
+                const response = await fetch('/api/captcha/status');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    regCaptchaEnabled = data.data.enabled;
+                    regCaptchaMode = data.data.mode || 'simple';
+                    
+                    if (regCaptchaEnabled) {
+                        document.getElementById('reg-captcha-container').style.display = 'block';
+                        showRegisterResult('验证码已启用 (模式: ' + regCaptchaMode + ')，正在获取验证码...', 'info');
+                        await refreshRegCaptcha();
+                    } else {
+                        document.getElementById('reg-captcha-container').style.display = 'none';
+                        showRegisterResult('验证码未启用，可直接注册', 'success');
+                    }
+                } else {
+                    showRegisterResult('检查验证码状态失败: ' + (data.error || '未知错误'), 'danger');
+                }
+            } catch (error) {
+                showRegisterResult('检查验证码状态失败: ' + error.message, 'danger');
+            }
+        }
+
+        async function refreshRegCaptcha() {
+            const captchaDisplay = document.getElementById('reg-captcha-display');
+            captchaDisplay.innerHTML = '<span class="text-muted">正在加载验证码...</span>';
+            
+            try {
+                const response = await fetch('/api/captcha/generate', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const captcha = data.data;
+                    
+                    if (!captcha.enabled) {
+                        captchaDisplay.innerHTML = '<span class="text-success">验证码未启用</span>';
+                        document.getElementById('reg-captcha-container').style.display = 'none';
+                        regCaptchaEnabled = false;
+                        return;
+                    }
+                    
+                    document.getElementById('reg_captcha_id').value = captcha.id;
+                    regCaptchaMode = captcha.mode || 'simple';
+                    
+                    if (captcha.mode === 'slide') {
+                        const imgWidth = captcha.image_width || 300;
+                        const imgHeight = captcha.image_height || 200;
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<div class="slide-captcha-container" style="width: ' + imgWidth + 'px;">' +
+                            '<img src="' + captcha.image + '" class="slide-captcha-bg" style="width: ' + imgWidth + 'px; height: ' + imgHeight + 'px;">' +
+                            '<img src="' + captcha.thumb_image + '" class="slide-captcha-thumb" id="reg-slide-thumb" style="left: ' + captcha.thumb_x + 'px; top: ' + captcha.thumb_y + 'px;">' +
+                            '</div>' +
+                            '<div class="slide-captcha-track" id="reg-slide-track" style="width: ' + imgWidth + 'px;">' +
+                            '<div class="slide-captcha-hint">← 拖动滑块 →</div>' +
+                            '<div class="slide-captcha-slider" id="reg-slide-slider"><i class="bi bi-arrows"></i></div>' +
+                            '</div>' +
+                            '<p class="small text-muted mt-2">当前位置X: <span id="reg-slide-position">' + captcha.thumb_x + '</span></p>' +
+                            '</div>';
+                        
+                        window.regSlideCaptchaData = {
+                            imageWidth: captcha.image_width || 300,
+                            imageHeight: captcha.image_height || 200,
+                            thumbX: captcha.thumb_x || 0,
+                            thumbY: captcha.thumb_y || 0
+                        };
+                        setTimeout(() => initRegSlideCapture(imgWidth, captcha.thumb_x), 50);
+                    } else if (captcha.mode === 'simple') {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<p class="mb-2">请点击图中的: <strong>' + captcha.target + '</strong></p>' +
+                            '<p class="small text-muted">输入目标位置 (0-based index)</p>' +
+                            '</div>';
+                    } else {
+                        captchaDisplay.innerHTML = '<div class="text-center">' +
+                            '<p>验证码模式: ' + captcha.mode + '</p>' +
+                            '<p class="small text-muted">请输入验证码答案</p>' +
+                            '</div>';
+                    }
+                    
+                    showRegisterResult('验证码已加载 (ID: ' + captcha.id.substring(0, 8) + '...)', 'info');
+                } else {
+                    captchaDisplay.innerHTML = '<span class="text-danger">获取验证码失败</span>';
+                    showRegisterResult('获取验证码失败: ' + (data.error || '未知错误'), 'danger');
+                }
+            } catch (error) {
+                captchaDisplay.innerHTML = '<span class="text-danger">获取验证码失败</span>';
+                showRegisterResult('获取验证码失败: ' + error.message, 'danger');
+            }
+        }
+
+        function initRegSlideCapture(trackWidth, initialX) {
+            const slider = document.getElementById('reg-slide-slider');
+            const thumb = document.getElementById('reg-slide-thumb');
+            const track = document.getElementById('reg-slide-track');
+            const positionDisplay = document.getElementById('reg-slide-position');
+            const captchaInput = document.getElementById('reg_captcha_position');
+            
+            if (!slider || !track) return;
+            
+            const sliderWidth = 50;
+            const maxX = trackWidth - sliderWidth - 4;
+            let isDragging = false;
+            let startX = 0;
+            let currentX = initialX || 0;
+            
+            updatePosition(currentX);
+            
+            function updatePosition(x) {
+                x = Math.max(0, Math.min(x, maxX));
+                currentX = x;
+                slider.style.left = (x + 2) + 'px';
+                if (thumb && window.regSlideCaptchaData) {
+                    thumb.style.left = x + 'px';
+                }
+                const roundedX = Math.round(x);
+                if (positionDisplay) positionDisplay.textContent = roundedX;
+                if (captchaInput) captchaInput.value = roundedX;
+            }
+            
+            function onMouseDown(e) {
+                isDragging = true;
+                startX = (e.clientX || e.touches[0].clientX) - currentX;
+                slider.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+            
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                if (clientX === undefined) return;
+                updatePosition(clientX - startX);
+            }
+            
+            function onMouseUp() {
+                if (isDragging) {
+                    isDragging = false;
+                    slider.style.cursor = 'grab';
+                }
+            }
+            
+            slider.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            slider.addEventListener('touchstart', onMouseDown, { passive: false });
+            document.addEventListener('touchmove', onMouseMove, { passive: false });
+            document.addEventListener('touchend', onMouseUp);
+            if (thumb) {
+                thumb.addEventListener('mousedown', onMouseDown);
+                thumb.addEventListener('touchstart', onMouseDown, { passive: false });
+            }
+        }
+
+        async function doRegister() {
+            const email = document.getElementById('reg_email').value;
+            const username = document.getElementById('reg_username').value;
+            const password = document.getElementById('reg_password').value;
+            const displayName = document.getElementById('reg_display_name').value;
+            
+            if (!email || !username || !password) {
+                showRegisterResult('请输入邮箱、用户名和密码', 'warning');
+                return;
+            }
+            
+            let captchaId = '';
+            
+            // Verify captcha first if enabled
+            if (regCaptchaEnabled) {
+                captchaId = document.getElementById('reg_captcha_id').value;
+                const captchaPosition = parseInt(document.getElementById('reg_captcha_position').value);
+                
+                if (!captchaId) {
+                    showRegisterResult('请先获取验证码', 'warning');
+                    return;
+                }
+                
+                if (isNaN(captchaPosition)) {
+                    showRegisterResult('请输入验证码答案', 'warning');
+                    return;
+                }
+                
+                showRegisterResult('正在验证验证码...', 'info');
+                
+                let verifyData = { id: captchaId };
+                if (regCaptchaMode === 'slide') {
+                    verifyData.answer = { x: captchaPosition };
+                } else {
+                    verifyData.position = captchaPosition;
+                }
+                
+                try {
+                    const verifyResponse = await fetch('/api/captcha/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(verifyData)
+                    });
+                    const verifyResult = await verifyResponse.json();
+                    
+                    if (!verifyResult.success) {
+                        showRegisterResult('验证码验证失败: ' + (verifyResult.message || '请重试'), 'danger');
+                        await refreshRegCaptcha();
+                        return;
+                    }
+                } catch (error) {
+                    showRegisterResult('验证码验证失败: ' + error.message, 'danger');
+                    await refreshRegCaptcha();
+                    return;
+                }
+            }
+            
+            showRegisterResult('正在注册...', 'info');
+            
+            const registerData = {
+                email: email,
+                username: username,
+                password: password
+            };
+            
+            if (displayName) {
+                registerData.display_name = displayName;
+            }
+            
+            if (regCaptchaEnabled && captchaId) {
+                registerData.captcha_id = captchaId;
+            }
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registerData)
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    hasToken = true;
+                    updateTokenStatus();
+                    
+                    let msg = '注册成功！';
+                    if (data.data && data.data.user) {
+                        msg += ' 欢迎, ' + (data.data.user.display_name || data.data.user.username);
+                    }
+                    showRegisterResult(msg, 'success');
+                    
+                    if (data.data && data.data.token) {
+                        document.getElementById('result').style.display = 'block';
+                        document.getElementById('result').textContent = JSON.stringify(data.data, null, 2);
+                        document.getElementById('placeholder').style.display = 'none';
+                    }
+                } else {
+                    showRegisterResult('注册失败: ' + (data.error || data.message || '未知错误'), 'danger');
+                    if (regCaptchaEnabled) {
+                        await refreshRegCaptcha();
+                    }
+                }
+            } catch (error) {
+                showRegisterResult('注册失败: ' + error.message, 'danger');
+                if (regCaptchaEnabled) {
+                    await refreshRegCaptcha();
+                }
+            }
+        }
+
+        function showRegisterResult(message, type) {
+            const registerResult = document.getElementById('register-result');
+            const registerAlert = document.getElementById('register-alert');
+            registerResult.style.display = 'block';
+            registerAlert.className = 'alert alert-' + type;
+            registerAlert.textContent = message;
+        }
+
+        // VIP and Recharge functions
+        function showPurchaseVIPModal() {
+            if (!hasToken) {
+                alert('请先获取Token');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('purchaseVIPModal'));
+            modal.show();
+        }
+
+        function showRechargeModal() {
+            if (!hasToken) {
+                alert('请先获取Token');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('rechargeModal'));
+            modal.show();
+        }
+
+        function setRechargeAmount(amount) {
+            document.getElementById('recharge_amount').value = amount;
+        }
+
+        async function doPurchaseVIP() {
+            const level = parseInt(document.getElementById('vip_level').value);
+            const duration = parseInt(document.getElementById('vip_duration').value);
+            const amount = parseFloat(document.getElementById('vip_amount').value);
+            const paymentMethod = document.getElementById('vip_payment_method').value;
+
+            if (!amount || amount <= 0) {
+                alert('请输入有效金额');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const tokenResult = document.getElementById('token-result');
+            const placeholder = document.getElementById('placeholder');
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('purchaseVIPModal'));
+            modal.hide();
+
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            tokenResult.style.display = 'none';
+            placeholder.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/jwt/purchase-vip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: level,
+                        duration: duration,
+                        amount: amount,
+                        payment_method: paymentMethod
+                    })
+                });
+                const data = await response.json();
+
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = '请求失败: ' + error.message;
+            }
+        }
+
+        async function doRecharge() {
+            const amount = parseFloat(document.getElementById('recharge_amount').value);
+            const paymentMethod = document.getElementById('recharge_payment_method').value;
+
+            if (!amount || amount < 1) {
+                alert('充值金额不能小于1元');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const tokenResult = document.getElementById('token-result');
+            const placeholder = document.getElementById('placeholder');
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('rechargeModal'));
+            modal.hide();
+
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            tokenResult.style.display = 'none';
+            placeholder.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/jwt/recharge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: amount,
+                        payment_method: paymentMethod
+                    })
+                });
+                const data = await response.json();
+
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.textContent = '请求失败: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
