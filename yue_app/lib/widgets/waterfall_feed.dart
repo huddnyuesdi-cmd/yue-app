@@ -12,6 +12,8 @@ class WaterfallFeed extends StatefulWidget {
 }
 
 class _WaterfallFeedState extends State<WaterfallFeed> {
+  static const double _kLoadMoreThreshold = 200;
+
   final List<Post> _posts = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -35,7 +37,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+        _scrollController.position.maxScrollExtent - _kLoadMoreThreshold) {
       _loadMorePosts();
     }
   }
