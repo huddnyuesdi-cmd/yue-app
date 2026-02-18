@@ -477,6 +477,108 @@ class PostService {
     }
   }
 
+  /// Get notifications list.
+  Future<List<Map<String, dynamic>>> getNotifications({int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/notifications',
+        queryParameters: {'page': page, 'limit': limit},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) return [];
+
+      final responseData = data['data'];
+      if (responseData is Map<String, dynamic>) {
+        final list = responseData['list'] as List? ?? responseData['notifications'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      if (responseData is List) {
+        return responseData.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Mark notification as read.
+  Future<void> markNotificationRead(int notificationId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      await _dio.put(
+        '/api/notifications/$notificationId/read',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } catch (_) {}
+  }
+
+  /// Mark all notifications as read.
+  Future<void> markAllNotificationsRead() async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      await _dio.put(
+        '/api/notifications/read-all',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } catch (_) {}
+  }
+
+  /// Follow/unfollow user.
+  Future<bool> toggleFollow(int userId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.post(
+        '/api/users/$userId/follow',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Get user info.
+  Future<Map<String, dynamic>> getUserInfo(int userId) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId',
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) return {};
+
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
   Never _throwDioError(DioException e) {
     if (e.response != null) {
       final data = e.response?.data;

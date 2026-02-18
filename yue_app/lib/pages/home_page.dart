@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../widgets/waterfall_feed.dart';
 import 'discover_page.dart';
 import 'login_page.dart';
+import 'notifications_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -53,28 +54,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMessagePage() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.message_rounded, size: 64, color: Color(0xFFFF6B6B)),
-          SizedBox(height: 16),
-          Text(
-            '消息',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '暂无新消息',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
-      ),
-    );
+    return const NotificationsPage();
   }
 
   Widget _buildProfilePage() {
