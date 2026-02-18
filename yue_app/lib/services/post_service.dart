@@ -579,6 +579,50 @@ class PostService {
     }
   }
 
+  /// Create a new post.
+  Future<bool> createPost({
+    required String title,
+    String? content,
+    List<String>? tags,
+    List<String>? imageUrls,
+    int type = 1,
+  }) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final body = <String, dynamic>{
+        'title': title,
+        'type': type,
+      };
+
+      if (content != null && content.isNotEmpty) {
+        body['content'] = content;
+      }
+
+      if (tags != null && tags.isNotEmpty) {
+        body['tags'] = tags;
+      }
+
+      if (imageUrls != null && imageUrls.isNotEmpty) {
+        body['images'] = imageUrls.map((url) => {'url': url, 'isFreePreview': true}).toList();
+      }
+
+      final response = await _dio.post(
+        '/api/posts',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
   Never _throwDioError(DioException e) {
     if (e.response != null) {
       final data = e.response?.data;

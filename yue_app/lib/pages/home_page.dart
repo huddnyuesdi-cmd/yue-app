@@ -4,6 +4,7 @@ import '../widgets/waterfall_feed.dart';
 import 'discover_page.dart';
 import 'notifications_page.dart';
 import 'profile_page.dart';
+import 'publish_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,6 +48,15 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(child: pages[_currentIndex]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PublishPage()),
+          );
+        },
+        backgroundColor: const Color(0xFFFF6B6B),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       bottomNavigationBar: TDBottomTabBar(
         TDBottomTabBarBasicType.iconText,
         componentType: TDBottomTabBarComponentType.normal,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../models/comment_model.dart';
 import '../services/post_service.dart';
+import 'user_profile_page.dart';
 
 class PostDetailPage extends StatefulWidget {
   final int postId;
@@ -153,15 +154,28 @@ class _PostDetailPageState extends State<PostDetailPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: _post != null
-            ? Row(
-                children: [
-                  _buildSmallAvatar(_post!.user.avatar),
-                  const SizedBox(width: 8),
-                  Text(
-                    _post!.user.nickname,
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
-                  ),
-                ],
+            ? GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UserProfilePage(
+                        userId: _post!.user.id,
+                        nickname: _post!.user.nickname,
+                        avatar: _post!.user.avatar,
+                      ),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    _buildSmallAvatar(_post!.user.avatar),
+                    const SizedBox(width: 8),
+                    Text(
+                      _post!.user.nickname,
+                      style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
+                    ),
+                  ],
+                ),
               )
             : null,
         actions: [
