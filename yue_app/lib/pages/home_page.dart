@@ -14,7 +14,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  late final List<Widget> _pages;
   UserCenterUser? _user;
 
   @override
@@ -216,18 +215,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    _pages = [
+  List<Widget> _buildPages() {
+    return [
       _buildHomePage(),
       _buildDiscoverPage(),
       _buildMessagePage(),
       _buildProfilePage(),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = _buildPages();
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(child: _pages[_currentIndex]),
+      body: SafeArea(child: pages[_currentIndex]),
       bottomNavigationBar: TDBottomTabBar(
         TDBottomTabBarBasicType.iconText,
         componentType: TDBottomTabBarComponentType.normal,
