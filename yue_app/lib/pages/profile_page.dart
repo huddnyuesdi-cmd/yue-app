@@ -4,7 +4,9 @@ import '../models/user_model.dart';
 import '../models/post_model.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
+import 'edit_profile_page.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -25,6 +27,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   bool _isLoadingCollections = false;
   bool _isLoadingLikes = false;
   int _communityUserId = 0;
+  String? _communityNickname;
+  String? _communityAvatar;
+  String? _communityBio;
+  String? _communityUserId2;
 
   @override
   void initState() {
@@ -70,15 +76,33 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Future<void> _loadCommunityProfile(UserCenterUser user) async {
     try {
       final postService = await PostService.getInstance();
-      final authService = await AuthService.getInstance();
-      final communityToken = authService.getCommunityToken();
-      if (communityToken == null || communityToken.isEmpty) return;
+      
+      // Use /api/auth/me to get the real community user
+      final communityUser = await postService.getCurrentUser();
+      final autoId = communityUser['id'] as int?;
+      
+      if (autoId != null && autoId > 0) {
+        _communityUserId = autoId;
+      } else {
+        _communityUserId = user.id;
+      }
 
-      _communityUserId = user.id;
+      // Store community user info for other pages
+      if (communityUser.isNotEmpty) {
+        final storage = await StorageService.getInstance();
+        await storage.setCommunityUserId(_communityUserId);
+      }
 
       final stats = await postService.getUserStats(_communityUserId);
       if (mounted) {
-        setState(() => _stats = stats);
+        setState(() {
+          _stats = stats;
+          // Update display info from community profile if available
+          _communityNickname = communityUser['nickname'] as String?;
+          _communityAvatar = communityUser['avatar'] as String?;
+          _communityBio = communityUser['bio'] as String?;
+          _communityUserId2 = communityUser['user_id'] as String?;
+        });
       }
       _loadPosts();
     } catch (_) {
@@ -221,10 +245,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               CircleAvatar(
                 radius: 36,
                 backgroundColor: const Color(0xFFFF6B6B),
-                child: _user?.avatar != null && _user!.avatar!.isNotEmpty
+                child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
                     ? ClipOval(
                         child: Image.network(
-                          _user!.avatar!,
+                          _communityAvatar!,
                           width: 72,
                           height: 72,
                           fit: BoxFit.cover,
@@ -235,9 +259,46 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           ),
                         ),
                       )
-                    : const Icon(Icons.person, size: 36, color: Colors.white),
+                    : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
+                        ? ClipOval(
+                            child: Image.network(
+                              _user!.avatar!,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person,
+                                size: 36,
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.person, size: 36, color: Colors.white),
               ),
               const Spacer(),
+              OutlinedButton(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => EditProfilePage(
+                      userId: _communityUserId,
+                      nickname: _communityNickname,
+                      avatar: _communityAvatar,
+                      bio: _communityBio,
+                    )),
+                  );
+                  if (result == true) {
+                    _loadUser();
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF333333),
+                  side: const BorderSide(color: Color(0xFFDDDDDD)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: _handleLogout,
                 icon: const Icon(Icons.settings_outlined, color: Color(0xFF666666)),
@@ -246,7 +307,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ),
           const SizedBox(height: 12),
           Text(
-            _user?.displayName ?? '用户',
+            _communityNickname ?? _user?.displayName ?? '用户',
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -255,9 +316,20 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ),
           const SizedBox(height: 4),
           Text(
-            '@${_user?.username ?? ''}',
+            _communityUserId2 != null && _communityUserId2!.isNotEmpty 
+                ? '@${_communityUserId2}' 
+                : '@${_user?.username ?? ''}',
             style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
           ),
+          if (_communityBio != null && _communityBio!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              _communityBio!,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
           const SizedBox(height: 16),
         ],
       ),

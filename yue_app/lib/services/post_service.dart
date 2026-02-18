@@ -623,6 +623,277 @@ class PostService {
     }
   }
 
+  /// Get current authenticated user from community API.
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/auth/me',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '获取用户信息失败');
+      }
+
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Update user profile.
+  Future<Map<String, dynamic>> updateUserProfile(int userId, Map<String, dynamic> updates) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.put(
+        '/api/users/$userId',
+        data: updates,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        throw Exception(data['message'] as String? ?? '更新资料失败');
+      }
+
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Change password.
+  Future<bool> changePassword(int userId, String currentPassword, String newPassword) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.put(
+        '/api/users/$userId/password',
+        data: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Get following feed posts.
+  Future<PostListResponse> getFollowingPosts({int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/posts/following',
+        queryParameters: {'page': page, 'limit': limit},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['posts'] as List? ?? responseData['list'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Submit onboarding data.
+  Future<bool> submitOnboarding({
+    String? gender,
+    String? birthday,
+    List<String>? interests,
+  }) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final body = <String, dynamic>{};
+      if (gender != null) body['gender'] = gender;
+      if (birthday != null) body['birthday'] = birthday;
+      if (interests != null) body['interests'] = interests;
+
+      final response = await _dio.post(
+        '/api/users/onboarding',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Refresh community token.
+  Future<bool> refreshToken() async {
+    final refreshToken = _storage.getCommunityRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return false;
+    }
+
+    try {
+      final response = await _dio.post(
+        '/api/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200 || data['data'] == null) {
+        return false;
+      }
+
+      final tokenData = data['data'] as Map<String, dynamic>;
+      final newAccessToken = tokenData['access_token'] as String?;
+      final newRefreshToken = tokenData['refresh_token'] as String?;
+
+      if (newAccessToken != null) {
+        await _storage.setCommunityToken(newAccessToken);
+      }
+      if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+        await _storage.setCommunityRefreshToken(newRefreshToken);
+      }
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Get user's following list.
+  Future<List<Map<String, dynamic>>> getFollowing(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/following',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return [];
+
+      final responseData = data['data'];
+      if (responseData is Map<String, dynamic>) {
+        final list = responseData['list'] as List? ?? responseData['users'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      if (responseData is List) {
+        return responseData.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Get user's followers list.
+  Future<List<Map<String, dynamic>>> getFollowers(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/followers',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return [];
+
+      final responseData = data['data'];
+      if (responseData is Map<String, dynamic>) {
+        final list = responseData['list'] as List? ?? responseData['users'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      if (responseData is List) {
+        return responseData.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Delete a post.
+  Future<bool> deletePost(int postId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.delete(
+        '/api/posts/$postId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
   Never _throwDioError(DioException e) {
     if (e.response != null) {
       final data = e.response?.data;
