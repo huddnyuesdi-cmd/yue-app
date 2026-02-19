@@ -332,26 +332,22 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildStats() {
-    final postCount = _statValue(_stats['post_count']) > 0
-        ? _statValue(_stats['post_count'])
-        : _statValue(_stats['posts_count']) > 0
-            ? _statValue(_stats['posts_count'])
-            : _posts.length;
-    final followingCount = _statValue(_stats['follow_count']) > 0
-        ? _statValue(_stats['follow_count'])
-        : _statValue(_stats['following_count']);
-    final followerCount = _statValue(_stats['fans_count']) > 0
-        ? _statValue(_stats['fans_count'])
-        : _statValue(_stats['follower_count']) > 0
-            ? _statValue(_stats['follower_count'])
-            : _statValue(_stats['followers_count']);
-    final likeCount = _statValue(_stats['likes_and_collects']) > 0
-        ? _statValue(_stats['likes_and_collects'])
-        : _statValue(_stats['like_count']) > 0
-            ? _statValue(_stats['like_count'])
-            : _statValue(_stats['likes_count']) > 0
-                ? _statValue(_stats['likes_count'])
-                : _statValue(_stats['total_likes']);
+    final svPostCount = _statValue(_stats['post_count']);
+    final svPostsCount = _statValue(_stats['posts_count']);
+    final svFollowCount = _statValue(_stats['follow_count']);
+    final svFollowingCount = _statValue(_stats['following_count']);
+    final svFansCount = _statValue(_stats['fans_count']);
+    final svFollowerCount = _statValue(_stats['follower_count']);
+    final svFollowersCount = _statValue(_stats['followers_count']);
+    final svLikesAndCollects = _statValue(_stats['likes_and_collects']);
+    final svLikeCount = _statValue(_stats['like_count']);
+    final svLikesCount = _statValue(_stats['likes_count']);
+    final svTotalLikes = _statValue(_stats['total_likes']);
+
+    final postCount = svPostCount > 0 ? svPostCount : svPostsCount > 0 ? svPostsCount : _posts.length;
+    final followingCount = svFollowCount > 0 ? svFollowCount : svFollowingCount;
+    final followerCount = svFansCount > 0 ? svFansCount : svFollowerCount > 0 ? svFollowerCount : svFollowersCount;
+    final likeCount = svLikesAndCollects > 0 ? svLikesAndCollects : svLikeCount > 0 ? svLikeCount : svLikesCount > 0 ? svLikesCount : svTotalLikes;
 
     return Container(
       color: Colors.white,
