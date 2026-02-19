@@ -468,9 +468,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
+  bool _isOwnComment(Comment comment) {
+    if (_currentUserId == null) return false;
+    if (_currentUserId.toString() == comment.userId) return true;
+    if (comment.user != null && _currentUserId == comment.user!.id) return true;
+    return false;
+  }
+
   Widget _buildCommentItem(Comment comment) {
-    final isOwnComment = _currentUserId != null &&
-        _currentUserId.toString() == comment.userId;
+    final isOwnComment = _isOwnComment(comment);
 
     return GestureDetector(
       onLongPress: isOwnComment ? () => _handleDeleteComment(comment) : null,
@@ -519,30 +525,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 if (comment.replies.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F8F8),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...comment.replies
-                            .map((reply) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      style: const TextStyle(fontSize: 13, color: Color(0xFF333333)),
-                                      children: [
-                                        TextSpan(
-                                          text: '${reply.user?.nickname ?? "匿名用户"}: ',
-                                          style: const TextStyle(color: Color(0xFF666666)),
-                                        ),
-                                        TextSpan(text: reply.content),
-                                      ],
-                                    ),
-                                  ),
-                                )),
+                        for (int i = 0; i < comment.replies.length; i++) ...[
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                          _buildReplyItem(comment.replies[i]),
+                        ],
                       ],
                     ),
                   )
@@ -562,6 +552,45 @@ class _PostDetailPageState extends State<PostDetailPage> {
           ),
         ],
       ),
+      ),
+    );
+  }
+
+  Widget _buildReplyItem(Comment reply) {
+    final isOwnReply = _isOwnComment(reply);
+
+    return GestureDetector(
+      onLongPress: isOwnReply ? () => _handleDeleteComment(reply) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSmallAvatar(reply.user?.avatar, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reply.user?.nickname ?? '匿名用户',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    reply.content,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF333333), height: 1.4),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatTime(reply.createdAt),
+                    style: const TextStyle(fontSize: 10, color: Color(0xFFBBBBBB)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

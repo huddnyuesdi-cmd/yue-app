@@ -105,9 +105,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         });
       }
       _loadPosts();
+      _loadCollections();
+      _loadLikes();
     } catch (_) {
       _communityUserId = user.id;
       _loadPosts();
+      _loadCollections();
+      _loadLikes();
     }
   }
 
@@ -321,9 +325,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Widget _buildStats() {
     final postCount = _stats['post_count'] as int? ?? _stats['posts_count'] as int? ?? _posts.length;
-    final followingCount = _stats['following_count'] as int? ?? 0;
-    final followerCount = _stats['follower_count'] as int? ?? _stats['followers_count'] as int? ?? 0;
-    final likeCount = _stats['like_count'] as int? ?? _stats['likes_count'] as int? ?? _stats['total_likes'] as int? ?? 0;
+    final followingCount = _stats['follow_count'] as int? ?? _stats['following_count'] as int? ?? 0;
+    final followerCount = _stats['fans_count'] as int? ?? _stats['follower_count'] as int? ?? _stats['followers_count'] as int? ?? 0;
+    final likeCount = _stats['likes_and_collects'] as int? ?? _stats['like_count'] as int? ?? _stats['likes_count'] as int? ?? _stats['total_likes'] as int? ?? 0;
 
     return Container(
       color: Colors.white,
