@@ -60,9 +60,6 @@ class _PublishPageState extends State<PublishPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('发布成功')),
-      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;

@@ -252,6 +252,37 @@ class PostService {
     }
   }
 
+  /// Get replies for a comment.
+  Future<List<Comment>> getCommentReplies(int commentId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/comments/$commentId/replies',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) return [];
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) return [];
+
+      final commentsJson = responseData['comments'] as List? ?? responseData['list'] as List? ?? [];
+      return commentsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
   /// Search posts.
   Future<PostListResponse> searchPosts({
     String? keyword,
@@ -1087,6 +1118,78 @@ class PostService {
       return data['code'] == 200;
     } on DioException catch (e) {
       _throwDioError(e);
+    }
+  }
+
+  /// Get privacy settings.
+  Future<Map<String, dynamic>> getPrivacySettings() async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/users/privacy-settings',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return {};
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Update privacy settings.
+  Future<bool> updatePrivacySettings(Map<String, dynamic> settings) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.put(
+        '/api/users/privacy-settings',
+        data: settings,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Get toolbar items configuration.
+  Future<List<Map<String, dynamic>>> getToolbarItems() async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) return [];
+
+    try {
+      final response = await _dio.get(
+        '/api/users/toolbar',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return [];
+
+      final responseData = data['data'];
+      if (responseData is List) {
+        return responseData.whereType<Map<String, dynamic>>().toList();
+      }
+      if (responseData is Map<String, dynamic>) {
+        final list = responseData['list'] as List? ?? responseData['items'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 

@@ -31,7 +31,8 @@ class Comment {
   final CommentUser? user;
   final int likeCount;
   final bool liked;
-  final List<Comment> replies;
+  final int replyCount;
+  List<Comment> replies;
 
   Comment({
     required this.id,
@@ -43,6 +44,7 @@ class Comment {
     this.user,
     this.likeCount = 0,
     this.liked = false,
+    this.replyCount = 0,
     this.replies = const [],
   });
 
@@ -81,6 +83,7 @@ class Comment {
       user: user,
       likeCount: json['like_count'] as int? ?? 0,
       liked: json['liked'] as bool? ?? false,
+      replyCount: json['reply_count'] as int? ?? 0,
       replies: repliesList,
     );
   }

@@ -104,8 +104,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (!mounted) return;
 
-      _showSnackBar('注册成功', isError: false);
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomePage()),
         (_) => false,

@@ -168,11 +168,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
       await postService.deleteComment(comment.id);
       await _loadComments();
       await _loadPostDetail();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('评论已删除')),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,6 +175,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
         );
       }
     }
+  }
+
+  Future<void> _loadReplies(Comment comment) async {
+    try {
+      final postService = await PostService.getInstance();
+      final replies = await postService.getCommentReplies(comment.id);
+      if (mounted) {
+        setState(() {
+          comment.replies = replies;
+        });
+      }
+    } catch (_) {}
   }
 
   String _formatTime(String? timeStr) {
@@ -500,13 +507,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
                             ),
                           ],
                         ),
-                      if (isOwnComment) ...[
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () => _handleDeleteComment(comment),
-                          child: const Icon(Icons.delete_outline, size: 14, color: Color(0xFFBBBBBB)),
-                        ),
-                      ],
                     ],
                   ),
                 // Replies
@@ -519,23 +519,36 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
-                      children: comment.replies
-                          .map((reply) => Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: const TextStyle(fontSize: 13, color: Color(0xFF333333)),
-                                    children: [
-                                      TextSpan(
-                                        text: '${reply.user?.nickname ?? "匿名用户"}: ',
-                                        style: const TextStyle(color: Color(0xFF666666)),
-                                      ),
-                                      TextSpan(text: reply.content),
-                                    ],
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...comment.replies
+                            .map((reply) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(fontSize: 13, color: Color(0xFF333333)),
+                                      children: [
+                                        TextSpan(
+                                          text: '${reply.user?.nickname ?? "匿名用户"}: ',
+                                          style: const TextStyle(color: Color(0xFF666666)),
+                                        ),
+                                        TextSpan(text: reply.content),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ))
-                          .toList(),
+                                )),
+                      ],
+                    ),
+                  )
+                else if (comment.replyCount > 0)
+                  GestureDetector(
+                    onTap: () => _loadReplies(comment),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '展开 ${comment.replyCount} 条回复',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF4A90D9)),
+                      ),
                     ),
                   ),
               ],

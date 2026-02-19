@@ -71,8 +71,6 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
       if (!mounted) return;
 
-      _showSnackBar('登录成功', isError: false);
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomePage()),
         (_) => false,
