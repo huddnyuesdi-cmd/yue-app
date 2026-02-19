@@ -62,7 +62,7 @@ class Comment {
     } else if (json['nickname'] != null || json['user_avatar'] != null) {
       user = CommentUser(
         id: json['user_auto_id'] as int? ?? 0,
-        userId: json['user_display_id'] as String? ?? (json['user_id'] is String ? json['user_id'] as String : ''),
+        userId: json['user_display_id'] as String? ?? '',
         nickname: json['nickname'] as String? ?? '',
         avatar: json['user_avatar'] as String?,
       );

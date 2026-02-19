@@ -15,6 +15,7 @@ class PostDetailPage extends StatefulWidget {
 }
 
 class _PostDetailPageState extends State<PostDetailPage> {
+  static const _contentTruncateLength = 200;
   Post? _post;
   List<Comment> _comments = [];
   bool _isLoading = true;
@@ -231,9 +232,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     const SizedBox(height: 12),
                                     Builder(builder: (context) {
                                       final cleanContent = _stripHtmlTags(_post!.content!);
-                                      final shouldFold = cleanContent.length > 200;
+                                      final shouldFold = cleanContent.length > _contentTruncateLength;
                                       final displayText = shouldFold && !_isContentExpanded
-                                          ? '${cleanContent.substring(0, 200)}...'
+                                          ? '${cleanContent.substring(0, _contentTruncateLength)}...'
                                           : cleanContent;
                                       return Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
