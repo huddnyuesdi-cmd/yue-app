@@ -88,13 +88,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         _communityUserId = user.id;
       }
 
+      // Extract display user_id for API calls (backend resolves by user_id)
+      _communityUsername = communityUser['user_id']?.toString();
+
       // Store community user info for other pages
       if (communityUser.isNotEmpty) {
         final storage = await StorageService.getInstance();
         await storage.setCommunityUserId(_communityUserId);
       }
 
-      final stats = await postService.getUserStats(_communityUserId);
+      final displayId = _communityUsername ?? _communityUserId.toString();
+      final stats = await postService.getUserStats(displayId);
       if (mounted) {
         setState(() {
           _stats = stats;
@@ -102,7 +106,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           _communityNickname = communityUser['nickname'] as String?;
           _communityAvatar = communityUser['avatar'] as String?;
           _communityBio = communityUser['bio'] as String?;
-          _communityUsername = communityUser['user_id']?.toString();
         });
       }
       _loadPosts();
@@ -116,13 +119,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
   }
 
+  String get _displayUserId => _communityUsername ?? _communityUserId.toString();
+
   Future<void> _loadPosts() async {
     if (_isLoadingPosts || _communityUserId == 0) return;
     setState(() => _isLoadingPosts = true);
 
     try {
       final postService = await PostService.getInstance();
-      final response = await postService.getUserPosts(_communityUserId);
+      final response = await postService.getUserPosts(_displayUserId);
       if (mounted) {
         setState(() {
           _posts = response.posts;
@@ -140,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
     try {
       final postService = await PostService.getInstance();
-      final response = await postService.getUserCollections(_communityUserId);
+      final response = await postService.getUserCollections(_displayUserId);
       if (mounted) {
         setState(() {
           _collections = response.posts;
@@ -158,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
     try {
       final postService = await PostService.getInstance();
-      final response = await postService.getUserLikes(_communityUserId);
+      final response = await postService.getUserLikes(_displayUserId);
       if (mounted) {
         setState(() {
           _likes = response.posts;
@@ -332,8 +337,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildStats() {
-    final svPostCount = _statValue(_stats['post_count']);
-    final svPostsCount = _statValue(_stats['posts_count']);
     final svFollowCount = _statValue(_stats['follow_count']);
     final svFollowingCount = _statValue(_stats['following_count']);
     final svFansCount = _statValue(_stats['fans_count']);
@@ -344,7 +347,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     final svLikesCount = _statValue(_stats['likes_count']);
     final svTotalLikes = _statValue(_stats['total_likes']);
 
-    final postCount = svPostCount > 0 ? svPostCount : svPostsCount > 0 ? svPostsCount : _posts.length;
     final followingCount = svFollowCount > 0 ? svFollowCount : svFollowingCount;
     final followerCount = svFansCount > 0 ? svFansCount : svFollowerCount > 0 ? svFollowerCount : svFollowersCount;
     final likeCount = svLikesAndCollects > 0 ? svLikesAndCollects : svLikeCount > 0 ? svLikeCount : svLikesCount > 0 ? svLikesCount : svTotalLikes;
@@ -355,13 +357,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('$postCount', '笔记'),
-          _buildDivider(),
           _buildStatItem('$followingCount', '关注'),
           _buildDivider(),
           _buildStatItem('$followerCount', '粉丝'),
           _buildDivider(),
-          _buildStatItem('$likeCount', '获赞'),
+          _buildStatItem('$likeCount', '获赞与收藏'),
         ],
       ),
     );

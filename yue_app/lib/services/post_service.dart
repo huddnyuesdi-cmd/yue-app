@@ -371,7 +371,7 @@ class PostService {
   }
 
   /// Get user posts.
-  Future<PostListResponse> getUserPosts(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserPosts(Object userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
 
     try {
@@ -415,7 +415,7 @@ class PostService {
   }
 
   /// Get user collections.
-  Future<PostListResponse> getUserCollections(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserCollections(Object userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -460,7 +460,7 @@ class PostService {
   }
 
   /// Get user likes.
-  Future<PostListResponse> getUserLikes(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserLikes(Object userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -505,7 +505,7 @@ class PostService {
   }
 
   /// Get user stats.
-  Future<Map<String, dynamic>> getUserStats(int userId) async {
+  Future<Map<String, dynamic>> getUserStats(Object userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -588,7 +588,7 @@ class PostService {
   }
 
   /// Follow/unfollow user.
-  Future<bool> toggleFollow(int userId) async {
+  Future<bool> toggleFollow(Object userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -608,7 +608,7 @@ class PostService {
   }
 
   /// Unfollow user.
-  Future<bool> unfollowUser(int userId) async {
+  Future<bool> unfollowUser(Object userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -783,7 +783,7 @@ class PostService {
   }
 
   /// Get user info.
-  Future<Map<String, dynamic>> getUserInfo(int userId) async {
+  Future<Map<String, dynamic>> getUserInfo(Object userId) async {
     final token = _storage.getCommunityToken();
 
     try {

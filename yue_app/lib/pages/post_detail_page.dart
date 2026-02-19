@@ -251,7 +251,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => UserProfilePage(
-                        userId: _post!.user.id,
+                        userId: _post!.user.userId,
                         nickname: _post!.user.nickname,
                         avatar: _post!.user.avatar,
                       ),
@@ -488,6 +488,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final isOwnComment = _isOwnComment(comment);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: isOwnComment ? () => _handleDeleteComment(comment) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -534,6 +535,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 if (comment.replies.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(top: 8),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: Color(0xFFE0E0E0), width: 2),
+                      ),
+                    ),
+                    padding: const EdgeInsets.only(left: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -569,6 +576,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final isOwnReply = _isOwnComment(reply);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: isOwnReply ? () => _handleDeleteComment(reply) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),

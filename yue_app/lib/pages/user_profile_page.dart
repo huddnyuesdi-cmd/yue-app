@@ -5,7 +5,7 @@ import '../services/post_service.dart';
 import '../widgets/post_card.dart';
 
 class UserProfilePage extends StatefulWidget {
-  final int userId;
+  final String userId;
   final String? nickname;
   final String? avatar;
 
@@ -222,8 +222,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildStatsRow() {
-    final svPostCount = _statValue(_stats['post_count']);
-    final svPostsCount = _statValue(_stats['posts_count']);
     final svFollowCount = _statValue(_stats['follow_count']);
     final svFollowingCount = _statValue(_stats['following_count']);
     final svFansCount = _statValue(_stats['fans_count']);
@@ -234,7 +232,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final svLikesCount = _statValue(_stats['likes_count']);
     final svTotalLikes = _statValue(_stats['total_likes']);
 
-    final postCount = svPostCount > 0 ? svPostCount : svPostsCount > 0 ? svPostsCount : _posts.length;
     final followingCount = svFollowCount > 0 ? svFollowCount : svFollowingCount;
     final followerCount = svFansCount > 0 ? svFansCount : svFollowerCount > 0 ? svFollowerCount : svFollowersCount;
     final likeCount = svLikesAndCollects > 0 ? svLikesAndCollects : svLikeCount > 0 ? svLikeCount : svLikesCount > 0 ? svLikesCount : svTotalLikes;
@@ -245,13 +242,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('$postCount', '笔记'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followingCount', '关注'),
           Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followerCount', '粉丝'),
           Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
-          _buildStatItem('$likeCount', '获赞'),
+          _buildStatItem('$likeCount', '获赞与收藏'),
         ],
       ),
     );
