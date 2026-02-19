@@ -124,21 +124,32 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
     return RefreshIndicator(
       onRefresh: _loadPosts,
       color: const Color(0xFF222222),
-      child: MasonryGridView.count(
-        controller: _scrollController,
-        crossAxisCount: 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
-        itemCount: _posts.length + (_isLoading ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= _posts.length) {
-            return _buildLoadMoreIndicator();
-          }
-          return PostCard(post: _posts[index]);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = _getGridColumnCount(constraints.maxWidth);
+          return MasonryGridView.count(
+            controller: _scrollController,
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            padding: const EdgeInsets.all(8),
+            itemCount: _posts.length + (_isLoading ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= _posts.length) {
+                return _buildLoadMoreIndicator();
+              }
+              return PostCard(post: _posts[index]);
+            },
+          );
         },
       ),
     );
+  }
+
+  int _getGridColumnCount(double width) {
+    if (width >= 900) return 4;
+    if (width >= 600) return 3;
+    return 2;
   }
 
   Widget _buildLoadingView() {

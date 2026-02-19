@@ -61,7 +61,7 @@ class PostService {
         return PostListResponse(posts: [], pagination: null);
       }
 
-      final postsJson = responseData['posts'] as List? ?? [];
+      final postsJson = responseData['posts'] as List? ?? responseData['list'] as List? ?? [];
       final posts = postsJson
           .whereType<Map<String, dynamic>>()
           .map((json) => Post.fromJson(json))
@@ -1236,7 +1236,7 @@ class PostPagination {
       page: json['page'] as int? ?? 1,
       limit: json['limit'] as int? ?? 20,
       total: json['total'] as int? ?? 0,
-      pages: json['pages'] as int? ?? 0,
+      pages: json['pages'] as int? ?? json['totalPages'] as int? ?? 0,
     );
   }
 }
