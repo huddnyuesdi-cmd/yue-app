@@ -32,8 +32,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _checkForUpdate() async {
-    // Wait for the page to fully build before showing dialog
-    await Future.delayed(const Duration(seconds: 1));
+    // Brief delay to ensure the home page is fully rendered
+    await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
     final updateInfo = await UpdateService.checkUpdate();

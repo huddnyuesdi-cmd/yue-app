@@ -66,7 +66,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (result.type != ResultType.done && mounted) {
         setState(() {
           _downloading = false;
-          _error = '安装失败，请重试';
+          _error = '安装失败: ${result.message}';
         });
       } else if (mounted) {
         Navigator.of(context).pop(true);
