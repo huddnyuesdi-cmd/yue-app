@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import 'auth_error_handler.dart';
 import 'post_card.dart';
 
 class WaterfallFeed extends StatefulWidget {
@@ -11,7 +13,7 @@ class WaterfallFeed extends StatefulWidget {
   State<WaterfallFeed> createState() => _WaterfallFeedState();
 }
 
-class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveClientMixin {
+class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveClientMixin, AuthErrorHandler {
   @override
   bool get wantKeepAlive => true;
 
@@ -71,8 +73,13 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().replaceFirst('Exception: ', '');
+        if (isAuthError(msg)) {
+          redirectToLogin();
+          return;
+        }
         setState(() {
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = msg;
           _isLoading = false;
         });
       }
@@ -124,18 +131,23 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
     return RefreshIndicator(
       onRefresh: _loadPosts,
       color: const Color(0xFF222222),
-      child: MasonryGridView.count(
-        controller: _scrollController,
-        crossAxisCount: 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
-        itemCount: _posts.length + (_isLoading ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= _posts.length) {
-            return _buildLoadMoreIndicator();
-          }
-          return PostCard(post: _posts[index]);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+          return MasonryGridView.count(
+            controller: _scrollController,
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            padding: const EdgeInsets.all(8),
+            itemCount: _posts.length + (_isLoading ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= _posts.length) {
+                return _buildLoadMoreIndicator();
+              }
+              return PostCard(post: _posts[index]);
+            },
+          );
         },
       ),
     );

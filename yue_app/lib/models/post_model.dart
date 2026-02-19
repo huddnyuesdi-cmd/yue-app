@@ -16,13 +16,40 @@ class PostUser {
   });
 
   factory PostUser.fromPostJson(Map<String, dynamic> json) {
+    // Support both flat post-level fields and nested user object
+    final userObj = json['user'] as Map<String, dynamic>?;
+
+    final id = json['author_auto_id'] as int?
+        ?? userObj?['id'] as int?
+        ?? 0;
+
+    final userId = json['author_account'] as String?
+        ?? userObj?['user_id'] as String?
+        ?? json['user_id']?.toString()
+        ?? '';
+
+    final nickname = json['nickname'] as String?
+        ?? json['author'] as String?
+        ?? userObj?['nickname'] as String?
+        ?? '';
+
+    final avatar = json['user_avatar'] as String?
+        ?? json['avatar'] as String?
+        ?? userObj?['avatar'] as String?;
+
+    final verified = json['verified'] as int?
+        ?? userObj?['verified'] as int?;
+
+    final verifiedName = json['verified_name'] as String?
+        ?? userObj?['verified_name'] as String?;
+
     return PostUser(
-      id: json['author_auto_id'] as int? ?? 0,
-      userId: json['author_account'] as String? ?? '',
-      nickname: json['nickname'] as String? ?? json['author'] as String? ?? '',
-      avatar: json['user_avatar'] as String? ?? json['avatar'] as String?,
-      verified: json['verified'] as int?,
-      verifiedName: json['verified_name'] as String?,
+      id: id,
+      userId: userId,
+      nickname: nickname,
+      avatar: avatar,
+      verified: verified,
+      verifiedName: verifiedName,
     );
   }
 }
@@ -117,10 +144,10 @@ class Post {
       title: json['title'] as String? ?? '',
       content: json['content'] as String?,
       type: json['type'] as int? ?? 1,
-      viewCount: json['view_count'] as int? ?? 0,
-      likeCount: json['like_count'] as int? ?? 0,
-      collectCount: json['collect_count'] as int? ?? 0,
-      commentCount: json['comment_count'] as int? ?? 0,
+      viewCount: json['view_count'] as int? ?? json['views_count'] as int? ?? 0,
+      likeCount: json['like_count'] as int? ?? json['likes_count'] as int? ?? 0,
+      collectCount: json['collect_count'] as int? ?? json['collects_count'] as int? ?? 0,
+      commentCount: json['comment_count'] as int? ?? json['comments_count'] as int? ?? 0,
       createdAt: json['created_at'] as String?,
       image: json['image'] as String?,
       images: imagesList,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../widgets/post_card.dart';
@@ -286,27 +287,32 @@ class _DiscoverPageState extends State<DiscoverPage> {
       );
     }
 
-    return MasonryGridView.count(
-      controller: _scrollController,
-      crossAxisCount: 2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      padding: const EdgeInsets.all(8),
-      itemCount: _searchResults.length + (_isLoading ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= _searchResults.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-              ),
-            ),
-          );
-        }
-        return PostCard(post: _searchResults[index]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+        return MasonryGridView.count(
+          controller: _scrollController,
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          padding: const EdgeInsets.all(8),
+          itemCount: _searchResults.length + (_isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= _searchResults.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
+                  ),
+                ),
+              );
+            }
+            return PostCard(post: _searchResults[index]);
+          },
+        );
       },
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../widgets/post_card.dart';
@@ -53,6 +54,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _isLoading = false;
         });
       }
+
+      // Also check follow status via dedicated API
+      _loadFollowStatus();
     } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -60,13 +64,35 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  Future<void> _loadFollowStatus() async {
+    try {
+      final uid = int.tryParse(widget.userId);
+      if (uid == null) return;
+      final postService = await PostService.getInstance();
+      final status = await postService.getFollowStatus(uid);
+      if (mounted && status.isNotEmpty) {
+        final following = status['is_following'] as bool? ?? status['following'] as bool? ?? false;
+        setState(() => _isFollowing = following);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _toggleFollow() async {
+    final wasFollowing = _isFollowing;
+    // Optimistic update
+    setState(() => _isFollowing = !wasFollowing);
+
     try {
       final postService = await PostService.getInstance();
-      await postService.toggleFollow(widget.userId);
-      setState(() => _isFollowing = !_isFollowing);
+      if (wasFollowing) {
+        await postService.unfollowUser(widget.userId);
+      } else {
+        await postService.toggleFollow(widget.userId);
+      }
     } catch (e) {
+      // Revert on failure
       if (mounted) {
+        setState(() => _isFollowing = wasFollowing);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
@@ -86,183 +112,191 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          nickname,
-          style: const TextStyle(fontSize: 16, color: Color(0xFF222222), fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
-          : CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
-                SliverToBoxAdapter(child: _buildStatsRow()),
-                if (_posts.isNotEmpty)
-                  SliverPadding(
-                    padding: const EdgeInsets.all(8),
-                    sliver: SliverMasonryGrid.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childCount: _posts.length,
-                      itemBuilder: (context, index) => PostCard(post: _posts[index]),
-                    ),
-                  )
-                else
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                          SizedBox(height: 12),
-                          Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
-                        ],
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
+                    SliverToBoxAdapter(child: _buildStatsRow()),
+                    if (_posts.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverMasonryGrid.count(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childCount: _posts.length,
+                          itemBuilder: (context, index) => PostCard(post: _posts[index]),
+                        ),
+                      )
+                    else
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+                              SizedBox(height: 12),
+                              Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
     );
   }
 
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId, {String background = '', int verified = 0, String verifiedName = ''}) {
-    return Column(
-      children: [
-        // Background image
-        if (background.isNotEmpty)
-          SizedBox(
-            height: 150,
-            width: double.infinity,
-            child: Image.network(
-              background,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 150,
-                color: const Color(0xFFF0F0F0),
-              ),
-            ),
-          )
-        else
-          Container(height: 80, color: const Color(0xFFF0F0F0)),
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final bgHeight = (background.isNotEmpty ? 150.0 : 120.0) + statusBarHeight;
+
+    return Container(
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Background + avatar overlap using Stack
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Avatar overlapping background
-              Transform.translate(
-                offset: const Offset(0, -30),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                      child: CircleAvatar(
-                        radius: 36,
-                        backgroundColor: const Color(0xFFF5F5F5),
-                        child: avatar.isNotEmpty
-                            ? ClipOval(
-                                child: Image.network(
-                                  avatar,
-                                  width: 72,
-                                  height: 72,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
-                                ),
-                              )
-                            : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
-                      ),
+              // Background image
+              if (background.isNotEmpty)
+                SizedBox(
+                  height: bgHeight,
+                  width: double.infinity,
+                  child: Image.network(
+                    background,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: bgHeight,
+                      width: double.infinity,
+                      color: const Color(0xFFF0F0F0),
                     ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: _toggleFollow,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          _isFollowing ? '已关注' : '+ 关注',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _isFollowing ? const Color(0xFF999999) : Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                  ),
+                )
+              else
+                Container(height: bgHeight, width: double.infinity, color: const Color(0xFFF0F0F0)),
+              // Back button on background top-left
+              Positioned(
+                left: 8,
+                top: MediaQuery.of(context).padding.top + 4,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
                     ),
-                  ],
+                    child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                  ),
                 ),
               ),
-              Transform.translate(
-                offset: const Offset(0, -16),
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              nickname,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
-                              overflow: TextOverflow.ellipsis,
+              // Avatar positioned to overlap background bottom
+              Positioned(
+                left: 20,
+                bottom: -36,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: const Color(0xFFF5F5F5),
+                    child: avatar.isNotEmpty
+                        ? ClipOval(
+                            child: Image.network(
+                              avatar,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                             ),
-                          ),
-                          if (verified > 0)
-                            VerifiedBadge(verified: verified, size: 16),
-                        ],
+                          )
+                        : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
+                  ),
+                ),
+              ),
+              // Follow button positioned at bottom-right
+              Positioned(
+                right: 20,
+                bottom: -24,
+                child: GestureDetector(
+                  onTap: _toggleFollow,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _isFollowing ? '已关注' : '+ 关注',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _isFollowing ? const Color(0xFF999999) : Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (verified > 0 && verifiedName.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          verifiedName,
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
-                        ),
-                      ),
-                    ] else if (userId.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'ID: $userId',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
-                        ),
-                      ),
-                    ],
-                    if (bio.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          bio,
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          // Space for the avatar part that extends below the background
+          const SizedBox(height: 44),
+          // User info
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        nickname,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (verified > 0)
+                      VerifiedBadge(verified: verified, size: 16),
+                  ],
+                ),
+                if (verified > 0 && verifiedName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    verifiedName,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
+                  ),
+                ] else if (userId.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'ID: $userId',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
+                  ),
+                ],
+                if (bio.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    bio,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

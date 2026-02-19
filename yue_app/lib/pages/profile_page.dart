@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/user_model.dart';
 import '../models/post_model.dart';
 import '../services/auth_service.dart';
@@ -224,47 +225,63 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildHeader() {
-    return Column(
-      children: [
-        // Background image
-        if (_communityBackground != null && _communityBackground!.isNotEmpty)
-          SizedBox(
-            height: 150,
-            width: double.infinity,
-            child: Image.network(
-              _communityBackground!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 150,
-                color: const Color(0xFFF0F0F0),
-              ),
-            ),
-          )
-        else
-          Container(height: 80, color: const Color(0xFFF0F0F0)),
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final bgHeight = (_communityBackground != null && _communityBackground!.isNotEmpty) ? 150.0 : 120.0;
+
+    return Container(
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Background + avatar overlap using Stack
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Avatar overlapping background
-              Transform.translate(
-                offset: const Offset(0, -30),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                      child: CircleAvatar(
-                        radius: 36,
-                        backgroundColor: const Color(0xFFF5F5F5),
-                        child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
+              // Background image
+              if (_communityBackground != null && _communityBackground!.isNotEmpty)
+                SizedBox(
+                  height: bgHeight,
+                  width: double.infinity,
+                  child: Image.network(
+                    _communityBackground!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: bgHeight,
+                      color: const Color(0xFFF0F0F0),
+                    ),
+                  ),
+                )
+              else
+                Container(height: bgHeight, width: double.infinity, color: const Color(0xFFF0F0F0)),
+              // Avatar positioned to overlap background bottom
+              Positioned(
+                left: 20,
+                bottom: -36,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: const Color(0xFFF5F5F5),
+                    child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
+                        ? ClipOval(
+                            child: Image.network(
+                              _communityAvatar!,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person,
+                                size: 36,
+                                color: Color(0xFFCCCCCC),
+                              ),
+                            ),
+                          )
+                        : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
                             ? ClipOval(
                                 child: Image.network(
-                                  _communityAvatar!,
+                                  _user!.avatar!,
                                   width: 72,
                                   height: 72,
                                   fit: BoxFit.cover,
@@ -275,24 +292,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   ),
                                 ),
                               )
-                            : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
-                                ? ClipOval(
-                                    child: Image.network(
-                                      _user!.avatar!,
-                                      width: 72,
-                                      height: 72,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.person,
-                                        size: 36,
-                                        color: Color(0xFFCCCCCC),
-                                      ),
-                                    ),
-                                  )
-                                : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
-                      ),
-                    ),
-                    const Spacer(),
+                            : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
+                  ),
+                ),
+              ),
+              // Action buttons positioned at bottom-right
+              Positioned(
+                right: 20,
+                bottom: -28,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     OutlinedButton(
                       onPressed: () async {
                         final result = await Navigator.of(context).push(
@@ -327,59 +337,62 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   ],
                 ),
               ),
-              Transform.translate(
-                offset: const Offset(0, -16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _communityNickname ?? _user?.displayName ?? '用户',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF222222),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (_communityVerified > 0)
-                          VerifiedBadge(verified: _communityVerified, size: 16),
-                      ],
-                    ),
-                    if (_communityVerified > 0 && _communityVerifiedName != null && _communityVerifiedName!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        _communityVerifiedName!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        _communityUsername != null && _communityUsername!.isNotEmpty
-                            ? '@$_communityUsername'
-                            : '@${_user?.username ?? ''}',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
-                      ),
-                    ],
-                    if (_communityBio != null && _communityBio!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _communityBio!,
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
             ],
           ),
-        ),
-      ],
+          // Space for the avatar part that extends below the background
+          const SizedBox(height: 44),
+          // User info
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _communityNickname ?? _user?.displayName ?? '用户',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF222222),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_communityVerified > 0)
+                      VerifiedBadge(verified: _communityVerified, size: 16),
+                  ],
+                ),
+                if (_communityVerified > 0 && _communityVerifiedName != null && _communityVerifiedName!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    _communityVerifiedName!,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    _communityUsername != null && _communityUsername!.isNotEmpty
+                        ? '@$_communityUsername'
+                        : '@${_user?.username ?? ''}',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                  ),
+                ],
+                if (_communityBio != null && _communityBio!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _communityBio!,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -472,13 +485,18 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       );
     }
 
-    return MasonryGridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      padding: const EdgeInsets.all(8),
-      itemCount: posts.length,
-      itemBuilder: (context, index) => PostCard(post: posts[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+        return MasonryGridView.count(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          padding: const EdgeInsets.all(8),
+          itemCount: posts.length,
+          itemBuilder: (context, index) => PostCard(post: posts[index]),
+        );
+      },
     );
   }
 }

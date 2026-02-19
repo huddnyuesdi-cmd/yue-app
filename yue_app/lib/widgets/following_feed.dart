@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import 'auth_error_handler.dart';
 import 'post_card.dart';
 
 class FollowingFeed extends StatefulWidget {
@@ -11,7 +13,7 @@ class FollowingFeed extends StatefulWidget {
   State<FollowingFeed> createState() => _FollowingFeedState();
 }
 
-class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveClientMixin {
+class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveClientMixin, AuthErrorHandler {
   final List<Post> _posts = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -66,8 +68,13 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().replaceFirst('Exception: ', '');
+        if (isAuthError(msg)) {
+          redirectToLogin();
+          return;
+        }
         setState(() {
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = msg;
           _isLoading = false;
         });
       }
@@ -118,27 +125,32 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
     return RefreshIndicator(
       onRefresh: _loadPosts,
       color: const Color(0xFF222222),
-      child: MasonryGridView.count(
-        controller: _scrollController,
-        crossAxisCount: 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
-        itemCount: _posts.length + (_isLoading ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= _posts.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-                ),
-              ),
-            );
-          }
-          return PostCard(post: _posts[index]);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+          return MasonryGridView.count(
+            controller: _scrollController,
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            padding: const EdgeInsets.all(8),
+            itemCount: _posts.length + (_isLoading ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= _posts.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
+                    ),
+                  ),
+                );
+              }
+              return PostCard(post: _posts[index]);
+            },
+          );
         },
       ),
     );
