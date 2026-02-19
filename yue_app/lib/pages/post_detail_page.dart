@@ -26,6 +26,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   int _currentImageIndex = 0;
   bool _isContentExpanded = false;
   int? _currentUserId;
+  String? _currentUserDisplayId;
   final Set<int> _loadingReplies = {};
 
   @override
@@ -137,7 +138,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
       final userInfo = await postService.getCurrentUser();
       if (mounted) {
         setState(() {
-          _currentUserId = userInfo['id'] as int?;
+          final rawId = userInfo['id'];
+          _currentUserId = rawId is int ? rawId : (rawId != null ? int.tryParse(rawId.toString()) : null);
+          final rawDisplayId = userInfo['user_id'];
+          _currentUserDisplayId = rawDisplayId?.toString();
         });
       }
     } catch (_) {}
@@ -406,7 +410,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                 ),
                               )
                             else
-                              ..._comments.map((comment) => _buildCommentItem(comment)),
+                              for (int i = 0; i < _comments.length; i++) ...[
+                                if (i > 0)
+                                  const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                                _buildCommentItem(_comments[i]),
+                              ],
                             const SizedBox(height: 80),
                           ],
                         ),
@@ -471,6 +479,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _isOwnComment(Comment comment) {
     if (_currentUserId == null) return false;
     if (_currentUserId.toString() == comment.userId) return true;
+    if (_currentUserDisplayId != null && _currentUserDisplayId == comment.userId) return true;
     if (comment.user != null && _currentUserId == comment.user!.id) return true;
     return false;
   }

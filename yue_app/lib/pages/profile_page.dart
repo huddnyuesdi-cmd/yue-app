@@ -79,7 +79,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       
       // Use /api/auth/me to get the real community user
       final communityUser = await postService.getCurrentUser();
-      final autoId = communityUser['id'] as int?;
+      final rawId = communityUser['id'];
+      final autoId = rawId is int ? rawId : (rawId != null ? int.tryParse(rawId.toString()) : null);
       
       if (autoId != null && autoId > 0) {
         _communityUserId = autoId;
@@ -101,7 +102,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           _communityNickname = communityUser['nickname'] as String?;
           _communityAvatar = communityUser['avatar'] as String?;
           _communityBio = communityUser['bio'] as String?;
-          _communityUsername = communityUser['user_id'] as String?;
+          _communityUsername = communityUser['user_id']?.toString();
         });
       }
       _loadPosts();
@@ -323,11 +324,34 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
+  int _statValue(dynamic val) {
+    if (val is int) return val;
+    if (val is String) return int.tryParse(val) ?? 0;
+    if (val is double) return val.toInt();
+    return 0;
+  }
+
   Widget _buildStats() {
-    final postCount = _stats['post_count'] as int? ?? _stats['posts_count'] as int? ?? _posts.length;
-    final followingCount = _stats['follow_count'] as int? ?? _stats['following_count'] as int? ?? 0;
-    final followerCount = _stats['fans_count'] as int? ?? _stats['follower_count'] as int? ?? _stats['followers_count'] as int? ?? 0;
-    final likeCount = _stats['likes_and_collects'] as int? ?? _stats['like_count'] as int? ?? _stats['likes_count'] as int? ?? _stats['total_likes'] as int? ?? 0;
+    final postCount = _statValue(_stats['post_count']) > 0
+        ? _statValue(_stats['post_count'])
+        : _statValue(_stats['posts_count']) > 0
+            ? _statValue(_stats['posts_count'])
+            : _posts.length;
+    final followingCount = _statValue(_stats['follow_count']) > 0
+        ? _statValue(_stats['follow_count'])
+        : _statValue(_stats['following_count']);
+    final followerCount = _statValue(_stats['fans_count']) > 0
+        ? _statValue(_stats['fans_count'])
+        : _statValue(_stats['follower_count']) > 0
+            ? _statValue(_stats['follower_count'])
+            : _statValue(_stats['followers_count']);
+    final likeCount = _statValue(_stats['likes_and_collects']) > 0
+        ? _statValue(_stats['likes_and_collects'])
+        : _statValue(_stats['like_count']) > 0
+            ? _statValue(_stats['like_count'])
+            : _statValue(_stats['likes_count']) > 0
+                ? _statValue(_stats['likes_count'])
+                : _statValue(_stats['total_likes']);
 
     return Container(
       color: Colors.white,
