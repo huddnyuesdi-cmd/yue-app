@@ -4,6 +4,8 @@ import 'home_feed_page.dart';
 import 'notifications_page.dart';
 import 'profile_page.dart';
 import 'publish_page.dart';
+import '../services/update_service.dart';
+import '../widgets/update_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +24,25 @@ class _HomePageState extends State<HomePage> {
     NotificationsPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    // Brief delay to ensure the home page is fully rendered
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
+    final updateInfo = await UpdateService.checkUpdate();
+    if (!mounted) return;
+
+    if (updateInfo != null && updateInfo.hasUpdate) {
+      UpdateDialog.show(context, updateInfo);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

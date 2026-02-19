@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../pages/post_detail_page.dart';
+import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -100,14 +101,22 @@ class PostCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     // Username
                     Expanded(
-                      child: Text(
-                        post.user.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF999999),
-                        ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              post.user.nickname,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF999999),
+                              ),
+                            ),
+                          ),
+                          if (post.user.verified != null && post.user.verified! > 0)
+                            VerifiedBadge(verified: post.user.verified, size: 11),
+                        ],
                       ),
                     ),
                     // Like icon

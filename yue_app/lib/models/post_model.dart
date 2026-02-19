@@ -3,12 +3,16 @@ class PostUser {
   final String userId;
   final String nickname;
   final String? avatar;
+  final int? verified;
+  final String? verifiedName;
 
   PostUser({
     required this.id,
     required this.userId,
     required this.nickname,
     this.avatar,
+    this.verified,
+    this.verifiedName,
   });
 
   factory PostUser.fromPostJson(Map<String, dynamic> json) {
@@ -17,6 +21,8 @@ class PostUser {
       userId: json['author_account'] as String? ?? '',
       nickname: json['nickname'] as String? ?? json['author'] as String? ?? '',
       avatar: json['user_avatar'] as String? ?? json['avatar'] as String?,
+      verified: json['verified'] as int?,
+      verifiedName: json['verified_name'] as String?,
     );
   }
 }

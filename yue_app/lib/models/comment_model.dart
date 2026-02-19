@@ -3,12 +3,14 @@ class CommentUser {
   final String userId;
   final String nickname;
   final String? avatar;
+  final int? verified;
 
   CommentUser({
     required this.id,
     required this.userId,
     required this.nickname,
     this.avatar,
+    this.verified,
   });
 
   factory CommentUser.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class CommentUser {
       userId: json['user_id'] as String? ?? '',
       nickname: json['nickname'] as String? ?? '',
       avatar: json['avatar'] as String?,
+      verified: json['verified'] as int?,
     );
   }
 }
@@ -67,6 +70,7 @@ class Comment {
         userId: json['user_display_id'] as String? ?? '',
         nickname: json['nickname'] as String? ?? '',
         avatar: json['user_avatar'] as String?,
+        verified: json['verified'] as int?,
       );
     }
 

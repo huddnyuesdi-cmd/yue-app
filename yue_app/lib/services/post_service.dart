@@ -162,8 +162,9 @@ class PostService {
     }
   }
 
-  /// Toggle like on a post.
-  Future<bool> toggleLike(int targetId, {String targetType = 'post'}) async {
+  /// Toggle like on a post or comment.
+  /// [targetType]: 1=post, 2=comment
+  Future<bool> toggleLike(int targetId, {int targetType = 1}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -172,7 +173,7 @@ class PostService {
     try {
       final response = await _dio.post(
         '/api/likes',
-        data: {'target_type': targetType, 'target_id': targetId.toString()},
+        data: {'target_type': targetType.toString(), 'target_id': targetId.toString()},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
@@ -371,7 +372,7 @@ class PostService {
   }
 
   /// Get user posts.
-  Future<PostListResponse> getUserPosts(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserPosts(String userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
 
     try {
@@ -415,7 +416,7 @@ class PostService {
   }
 
   /// Get user collections.
-  Future<PostListResponse> getUserCollections(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserCollections(String userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -460,7 +461,7 @@ class PostService {
   }
 
   /// Get user likes.
-  Future<PostListResponse> getUserLikes(int userId, {int page = 1, int limit = 20}) async {
+  Future<PostListResponse> getUserLikes(String userId, {int page = 1, int limit = 20}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -505,7 +506,7 @@ class PostService {
   }
 
   /// Get user stats.
-  Future<Map<String, dynamic>> getUserStats(int userId) async {
+  Future<Map<String, dynamic>> getUserStats(String userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -588,7 +589,7 @@ class PostService {
   }
 
   /// Follow/unfollow user.
-  Future<bool> toggleFollow(int userId) async {
+  Future<bool> toggleFollow(String userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -608,7 +609,7 @@ class PostService {
   }
 
   /// Unfollow user.
-  Future<bool> unfollowUser(int userId) async {
+  Future<bool> unfollowUser(String userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -783,7 +784,7 @@ class PostService {
   }
 
   /// Get user info.
-  Future<Map<String, dynamic>> getUserInfo(int userId) async {
+  Future<Map<String, dynamic>> getUserInfo(String userId) async {
     final token = _storage.getCommunityToken();
 
     try {
