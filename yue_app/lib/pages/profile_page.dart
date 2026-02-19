@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
+import '../widgets/verified_badge.dart';
 import 'edit_profile_page.dart';
 import 'settings_page.dart';
 
@@ -31,6 +32,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   String? _communityAvatar;
   String? _communityBio;
   String? _communityUsername;
+  String? _communityBackground;
+  int _communityVerified = 0;
+  String? _communityVerifiedName;
 
   @override
   void initState() {
@@ -106,6 +110,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           _communityNickname = communityUser['nickname'] as String?;
           _communityAvatar = communityUser['avatar'] as String?;
           _communityBio = communityUser['bio'] as String?;
+          _communityBackground = communityUser['background'] as String?;
+          _communityVerified = communityUser['verified'] as int? ?? 0;
+          _communityVerifiedName = communityUser['verified_name'] as String?;
         });
       }
       _loadPosts();
@@ -217,115 +224,162 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildHeader() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      children: [
+        // Background image
+        if (_communityBackground != null && _communityBackground!.isNotEmpty)
+          SizedBox(
+            height: 150,
+            width: double.infinity,
+            child: Image.network(
+              _communityBackground!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                height: 150,
+                color: const Color(0xFFF0F0F0),
+              ),
+            ),
+          )
+        else
+          Container(height: 80, color: const Color(0xFFF0F0F0)),
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFF0F0F0), width: 1),
-                ),
-                child: CircleAvatar(
-                  radius: 36,
-                  backgroundColor: const Color(0xFFF5F5F5),
-                  child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
-                      ? ClipOval(
-                          child: Image.network(
-                            _communityAvatar!,
-                            width: 72,
-                            height: 72,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.person,
-                              size: 36,
-                              color: Color(0xFFCCCCCC),
-                            ),
-                          ),
-                        )
-                      : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
-                          ? ClipOval(
-                              child: Image.network(
-                                _user!.avatar!,
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.person,
-                                  size: 36,
-                                  color: Color(0xFFCCCCCC),
+              // Avatar overlapping background
+              Transform.translate(
+                offset: const Offset(0, -30),
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                      ),
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: const Color(0xFFF5F5F5),
+                        child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
+                            ? ClipOval(
+                                child: Image.network(
+                                  _communityAvatar!,
+                                  width: 72,
+                                  height: 72,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: Color(0xFFCCCCCC),
+                                  ),
                                 ),
-                              ),
-                            )
-                          : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
+                              )
+                            : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _user!.avatar!,
+                                      width: 72,
+                                      height: 72,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.person,
+                                        size: 36,
+                                        color: Color(0xFFCCCCCC),
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
+                      ),
+                    ),
+                    const Spacer(),
+                    OutlinedButton(
+                      onPressed: () async {
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => EditProfilePage(
+                            userId: _communityUserId,
+                            nickname: _communityNickname,
+                            avatar: _communityAvatar,
+                            bio: _communityBio,
+                          )),
+                        );
+                        if (result == true) {
+                          _loadUser();
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF333333),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
+                        );
+                      },
+                      child: const Icon(Icons.settings_outlined, size: 22, color: Color(0xFF666666)),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              OutlinedButton(
-                onPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => EditProfilePage(
-                      userId: _communityUserId,
-                      nickname: _communityNickname,
-                      avatar: _communityAvatar,
-                      bio: _communityBio,
-                    )),
-                  );
-                  if (result == true) {
-                    _loadUser();
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF333333),
-                  side: const BorderSide(color: Color(0xFFE0E0E0)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              Transform.translate(
+                offset: const Offset(0, -16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _communityNickname ?? _user?.displayName ?? '用户',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF222222),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (_communityVerified > 0)
+                          VerifiedBadge(verified: _communityVerified, size: 16),
+                      ],
+                    ),
+                    if (_communityVerified > 0 && _communityVerifiedName != null && _communityVerifiedName!.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _communityVerifiedName!,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _communityUsername != null && _communityUsername!.isNotEmpty
+                            ? '@$_communityUsername'
+                            : '@${_user?.username ?? ''}',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                      ),
+                    ],
+                    if (_communityBio != null && _communityBio!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _communityBio!,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
-                child: const Text('编辑资料', style: TextStyle(fontSize: 13)),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => SettingsPage(communityUserId: _communityUserId)),
-                  );
-                },
-                child: const Icon(Icons.settings_outlined, size: 22, color: Color(0xFF666666)),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            _communityNickname ?? _user?.displayName ?? '用户',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF222222),
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            _communityUsername != null && _communityUsername!.isNotEmpty 
-                ? '@$_communityUsername' 
-                : '@${_user?.username ?? ''}',
-            style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
-          ),
-          if (_communityBio != null && _communityBio!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              _communityBio!,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 

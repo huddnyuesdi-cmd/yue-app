@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../models/comment_model.dart';
 import '../services/post_service.dart';
+import '../widgets/verified_badge.dart';
 import 'user_profile_page.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -266,6 +267,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       _post!.user.nickname,
                       style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
                     ),
+                    if (_post!.user.verified != null && _post!.user.verified! > 0)
+                      VerifiedBadge(verified: _post!.user.verified, size: 14),
                   ],
                 ),
               )
@@ -501,9 +504,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    comment.user?.nickname ?? '匿名用户',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                  Row(
+                    children: [
+                      Text(
+                        comment.user?.nickname ?? '匿名用户',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                      ),
+                      if (comment.user?.verified != null && comment.user!.verified! > 0)
+                        VerifiedBadge(verified: comment.user!.verified, size: 13),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -589,9 +598,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    reply.user?.nickname ?? '匿名用户',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                  Row(
+                    children: [
+                      Text(
+                        reply.user?.nickname ?? '匿名用户',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                      ),
+                      if (reply.user?.verified != null && reply.user!.verified! > 0)
+                        VerifiedBadge(verified: reply.user!.verified, size: 11),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(

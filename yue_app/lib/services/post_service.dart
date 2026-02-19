@@ -162,8 +162,9 @@ class PostService {
     }
   }
 
-  /// Toggle like on a post.
-  Future<bool> toggleLike(int targetId, {String targetType = 'post'}) async {
+  /// Toggle like on a post or comment.
+  /// [targetType]: 1=post, 2=comment
+  Future<bool> toggleLike(int targetId, {int targetType = 1}) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');
@@ -172,7 +173,7 @@ class PostService {
     try {
       final response = await _dio.post(
         '/api/likes',
-        data: {'target_type': targetType, 'target_id': targetId.toString()},
+        data: {'target_type': targetType.toString(), 'target_id': targetId.toString()},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
