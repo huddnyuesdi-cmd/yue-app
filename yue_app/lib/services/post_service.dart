@@ -232,6 +232,26 @@ class PostService {
     }
   }
 
+  /// Delete a comment.
+  Future<bool> deleteComment(int commentId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.delete(
+        '/api/comments/$commentId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
   /// Search posts.
   Future<PostListResponse> searchPosts({
     String? keyword,
@@ -546,6 +566,181 @@ class PostService {
     try {
       final response = await _dio.post(
         '/api/users/$userId/follow',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Unfollow user.
+  Future<bool> unfollowUser(int userId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.delete(
+        '/api/users/$userId/follow',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Get follow status for a user.
+  Future<Map<String, dynamic>> getFollowStatus(int userId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) return {};
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/follow-status',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return {};
+      return data['data'] as Map<String, dynamic>? ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Get mutual follows list.
+  Future<List<Map<String, dynamic>>> getMutualFollows(int userId, {int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+
+    try {
+      final response = await _dio.get(
+        '/api/users/$userId/mutual-follows',
+        queryParameters: {'page': page, 'limit': limit},
+        options: token != null && token.isNotEmpty
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+      if (code != 200) return [];
+
+      final responseData = data['data'];
+      if (responseData is Map<String, dynamic>) {
+        final list = responseData['list'] as List? ?? responseData['users'] as List? ?? [];
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+      if (responseData is List) {
+        return responseData.whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Record browsing history.
+  Future<bool> recordBrowsingHistory(int postId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      final response = await _dio.post(
+        '/api/users/history',
+        data: {'post_id': postId.toString()},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Get browsing history.
+  Future<PostListResponse> getBrowsingHistory({int page = 1, int limit = 20}) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/users/history',
+        queryParameters: {'page': page, 'limit': limit},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final code = data['code'] as int?;
+
+      if (code != 200) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final responseData = data['data'] as Map<String, dynamic>?;
+      if (responseData == null) {
+        return PostListResponse(posts: [], pagination: null);
+      }
+
+      final postsJson = responseData['posts'] as List? ?? responseData['list'] as List? ?? [];
+      final posts = postsJson
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Post.fromJson(json))
+          .toList();
+
+      PostPagination? pagination;
+      if (responseData['pagination'] != null) {
+        pagination = PostPagination.fromJson(
+          responseData['pagination'] as Map<String, dynamic>,
+        );
+      }
+
+      return PostListResponse(posts: posts, pagination: pagination);
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Clear all browsing history.
+  Future<bool> clearBrowsingHistory() async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.delete(
+        '/api/users/history',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      return data['code'] == 200;
+    } on DioException catch (e) {
+      _throwDioError(e);
+    }
+  }
+
+  /// Delete a single browsing history item.
+  Future<bool> deleteBrowsingHistoryItem(int postId) async {
+    final token = _storage.getCommunityToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('请先登录');
+    }
+
+    try {
+      final response = await _dio.delete(
+        '/api/users/history/$postId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 

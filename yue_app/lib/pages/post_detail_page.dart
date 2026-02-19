@@ -25,11 +25,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
   final _commentFocusNode = FocusNode();
   int _currentImageIndex = 0;
   bool _isContentExpanded = false;
+  int? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _post = widget.initialPost;
+    _loadCurrentUser();
     _loadPostDetail();
     _loadComments();
   }
@@ -128,6 +130,58 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  Future<void> _loadCurrentUser() async {
+    try {
+      final postService = await PostService.getInstance();
+      final userInfo = await postService.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _currentUserId = userInfo['id'] as int?;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleDeleteComment(Comment comment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除评论'),
+        content: const Text('确定要删除这条评论吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final postService = await PostService.getInstance();
+      await postService.deleteComment(comment.id);
+      await _loadComments();
+      await _loadPostDetail();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('评论已删除')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+  }
+
   String _formatTime(String? timeStr) {
     if (timeStr == null) return '';
     try {
@@ -146,15 +200,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   String _stripHtmlTags(String htmlContent) {
     String text = htmlContent;
+    // Handle <br> adjacent to block-level transitions as a single newline
+    text = text.replaceAll(RegExp(r'<br\s*/?>\s*</div>\s*<div>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'<br\s*/?>\s*</p>\s*<p>', caseSensitive: false), '\n');
     text = text.replaceAll(RegExp(r'<br\s*/?>',caseSensitive: false), '\n');
-    text = text.replaceAll(RegExp(r'</div><div>', caseSensitive: false), '\n');
-    text = text.replaceAll(RegExp(r'</p><p>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</div>\s*<div>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</p>\s*<p>', caseSensitive: false), '\n');
     text = text.replaceAll(RegExp(r'<[^>]*>'), '');
     text = text.replaceAll('&nbsp;', ' ');
     text = text.replaceAll('&amp;', '&');
     text = text.replaceAll('&lt;', '<');
     text = text.replaceAll('&gt;', '>');
     text = text.replaceAll('&quot;', '"');
+    // Collapse multiple consecutive newlines into a maximum of two
+    text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     return text.trim();
   }
 
@@ -397,47 +456,59 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Widget _buildCommentItem(Comment comment) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSmallAvatar(comment.user?.avatar, size: 32),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  comment.user?.nickname ?? '匿名用户',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  comment.content,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF333333), height: 1.4),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      _formatTime(comment.createdAt),
-                      style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
-                    ),
-                    const SizedBox(width: 16),
-                    if (comment.likeCount > 0)
-                      Row(
-                        children: [
-                          const Icon(Icons.favorite_border, size: 12, color: Color(0xFFBBBBBB)),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${comment.likeCount}',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
-                          ),
-                        ],
+    final isOwnComment = _currentUserId != null &&
+        _currentUserId.toString() == comment.userId;
+
+    return GestureDetector(
+      onLongPress: isOwnComment ? () => _handleDeleteComment(comment) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSmallAvatar(comment.user?.avatar, size: 32),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    comment.user?.nickname ?? '匿名用户',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    comment.content,
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF333333), height: 1.4),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        _formatTime(comment.createdAt),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
                       ),
-                  ],
-                ),
+                      const SizedBox(width: 16),
+                      if (comment.likeCount > 0)
+                        Row(
+                          children: [
+                            const Icon(Icons.favorite_border, size: 12, color: Color(0xFFBBBBBB)),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${comment.likeCount}',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
+                            ),
+                          ],
+                        ),
+                      if (isOwnComment) ...[
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => _handleDeleteComment(comment),
+                          child: const Icon(Icons.delete_outline, size: 14, color: Color(0xFFBBBBBB)),
+                        ),
+                      ],
+                    ],
+                  ),
                 // Replies
                 if (comment.replies.isNotEmpty)
                   Container(
@@ -471,6 +542,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
