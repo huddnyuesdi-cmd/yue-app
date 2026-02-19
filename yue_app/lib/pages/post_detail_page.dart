@@ -23,6 +23,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   final _commentController = TextEditingController();
   final _commentFocusNode = FocusNode();
   int _currentImageIndex = 0;
+  bool _isContentExpanded = false;
 
   @override
   void initState() {
@@ -142,6 +143,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  String _stripHtmlTags(String htmlContent) {
+    String text = htmlContent;
+    text = text.replaceAll(RegExp(r'<br\s*/?>',caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</div><div>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</p><p>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'<[^>]*>'), '');
+    text = text.replaceAll('&nbsp;', ' ');
+    text = text.replaceAll('&amp;', '&');
+    text = text.replaceAll('&lt;', '<');
+    text = text.replaceAll('&gt;', '>');
+    text = text.replaceAll('&quot;', '"');
+    return text.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,14 +229,44 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   ),
                                   if (_post!.content != null && _post!.content!.isNotEmpty) ...[
                                     const SizedBox(height: 12),
-                                    Text(
-                                      _post!.content!,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        color: Color(0xFF666666),
-                                        height: 1.6,
-                                      ),
-                                    ),
+                                    Builder(builder: (context) {
+                                      final cleanContent = _stripHtmlTags(_post!.content!);
+                                      final shouldFold = cleanContent.length > 200;
+                                      final displayText = shouldFold && !_isContentExpanded
+                                          ? '${cleanContent.substring(0, 200)}...'
+                                          : cleanContent;
+                                      return Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            displayText,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Color(0xFF666666),
+                                              height: 1.6,
+                                            ),
+                                          ),
+                                          if (shouldFold)
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _isContentExpanded = !_isContentExpanded;
+                                                });
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 4),
+                                                child: Text(
+                                                  _isContentExpanded ? '收起' : '展开',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Color(0xFF4A90D9),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    }),
                                   ],
                                   // Tags
                                   if (_post!.tags.isNotEmpty) ...[
