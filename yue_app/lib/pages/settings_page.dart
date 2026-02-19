@@ -158,11 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
         newPwd,
       );
       if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('密码修改成功')),
-          );
-        } else {
+        if (!success) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('密码修改失败')),
           );
@@ -180,11 +176,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _clearCache() async {
     final storage = await StorageService.getInstance();
     await storage.clearCommunityUserId();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('缓存已清除')),
-      );
-    }
   }
 
   @override

@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
                 _buildTabItem(1, Icons.explore_rounded, Icons.explore_outlined, '发现'),
                 _buildPublishButton(),
                 _buildTabItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息'),
-                _buildTabItem(4, Icons.person_rounded, Icons.person_outline_rounded, '我'),
+                _buildTabItem(4, Icons.person_rounded, Icons.person_outline_rounded, '我的'),
               ],
             ),
           ),
