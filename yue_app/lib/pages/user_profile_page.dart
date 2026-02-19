@@ -54,6 +54,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _isLoading = false;
         });
       }
+
+      // Also check follow status via dedicated API
+      _loadFollowStatus();
     } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -61,13 +64,35 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  Future<void> _loadFollowStatus() async {
+    try {
+      final uid = int.tryParse(widget.userId);
+      if (uid == null) return;
+      final postService = await PostService.getInstance();
+      final status = await postService.getFollowStatus(uid);
+      if (mounted && status.isNotEmpty) {
+        final following = status['is_following'] as bool? ?? status['following'] as bool? ?? false;
+        setState(() => _isFollowing = following);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _toggleFollow() async {
+    final wasFollowing = _isFollowing;
+    // Optimistic update
+    setState(() => _isFollowing = !wasFollowing);
+
     try {
       final postService = await PostService.getInstance();
-      await postService.toggleFollow(widget.userId);
-      setState(() => _isFollowing = !_isFollowing);
+      if (wasFollowing) {
+        await postService.unfollowUser(widget.userId);
+      } else {
+        await postService.toggleFollow(widget.userId);
+      }
     } catch (e) {
+      // Revert on failure
       if (mounted) {
+        setState(() => _isFollowing = wasFollowing);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
@@ -87,19 +112,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          nickname,
-          style: const TextStyle(fontSize: 16, color: Color(0xFF222222), fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
           : LayoutBuilder(
@@ -142,7 +154,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId, {String background = '', int verified = 0, String verifiedName = ''}) {
-    final bgHeight = background.isNotEmpty ? 150.0 : 120.0;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final bgHeight = (background.isNotEmpty ? 150.0 : 120.0) + statusBarHeight;
 
     return Container(
       color: Colors.white,
@@ -170,6 +183,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 )
               else
                 Container(height: bgHeight, width: double.infinity, color: const Color(0xFFF0F0F0)),
+              // Back button on background top-left
+              Positioned(
+                left: 8,
+                top: MediaQuery.of(context).padding.top + 4,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
               // Avatar positioned to overlap background bottom
               Positioned(
                 left: 20,
