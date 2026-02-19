@@ -26,6 +26,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   int _currentImageIndex = 0;
   bool _isContentExpanded = false;
   int? _currentUserId;
+  final Set<int> _loadingReplies = {};
 
   @override
   void initState() {
@@ -178,6 +179,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Future<void> _loadReplies(Comment comment) async {
+    if (_loadingReplies.contains(comment.id)) return;
+    _loadingReplies.add(comment.id);
     try {
       final postService = await PostService.getInstance();
       final replies = await postService.getCommentReplies(comment.id);
@@ -186,7 +189,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           comment.replies = replies;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      _loadingReplies.remove(comment.id);
+    }
   }
 
   String _formatTime(String? timeStr) {
