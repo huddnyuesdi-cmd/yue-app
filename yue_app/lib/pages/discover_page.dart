@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../widgets/post_card.dart';
@@ -288,7 +289,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = _getGridColumnCount(constraints.maxWidth);
+        final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
         return MasonryGridView.count(
           controller: _scrollController,
           crossAxisCount: crossAxisCount,
@@ -314,11 +315,5 @@ class _DiscoverPageState extends State<DiscoverPage> {
         );
       },
     );
-  }
-
-  int _getGridColumnCount(double width) {
-    if (width >= 900) return 4;
-    if (width >= 600) return 3;
-    return 2;
   }
 }

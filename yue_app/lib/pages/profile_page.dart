@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/user_model.dart';
 import '../models/post_model.dart';
 import '../services/auth_service.dart';
@@ -486,7 +487,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = _getGridColumnCount(constraints.maxWidth);
+        final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
         return MasonryGridView.count(
           crossAxisCount: crossAxisCount,
           mainAxisSpacing: 8,
@@ -497,12 +498,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         );
       },
     );
-  }
-
-  int _getGridColumnCount(double width) {
-    if (width >= 900) return 4;
-    if (width >= 600) return 3;
-    return 2;
   }
 }
 

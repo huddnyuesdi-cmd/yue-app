@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import 'post_card.dart';
@@ -120,7 +121,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
       color: const Color(0xFF222222),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxisCount = _getGridColumnCount(constraints.maxWidth);
+          final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
           return MasonryGridView.count(
             controller: _scrollController,
             crossAxisCount: crossAxisCount,
@@ -147,12 +148,6 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
         },
       ),
     );
-  }
-
-  int _getGridColumnCount(double width) {
-    if (width >= 900) return 4;
-    if (width >= 600) return 3;
-    return 2;
   }
 
   Widget _buildErrorView() {

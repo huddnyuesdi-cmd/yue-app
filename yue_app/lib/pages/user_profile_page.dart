@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../widgets/post_card.dart';
@@ -103,7 +104,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
           : LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount = _getGridColumnCount(constraints.maxWidth);
+                final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
                 return CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
@@ -321,11 +322,5 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
       ],
     );
-  }
-
-  int _getGridColumnCount(double width) {
-    if (width >= 900) return 4;
-    if (width >= 600) return 3;
-    return 2;
   }
 }
