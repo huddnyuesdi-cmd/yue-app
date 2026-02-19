@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
-import '../pages/login_page.dart';
-import '../services/auth_service.dart';
 import '../services/post_service.dart';
+import 'auth_error_handler.dart';
 import 'post_card.dart';
 
 class FollowingFeed extends StatefulWidget {
@@ -14,7 +13,7 @@ class FollowingFeed extends StatefulWidget {
   State<FollowingFeed> createState() => _FollowingFeedState();
 }
 
-class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveClientMixin {
+class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveClientMixin, AuthErrorHandler {
   final List<Post> _posts = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -70,8 +69,8 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
     } catch (e) {
       if (mounted) {
         final msg = e.toString().replaceFirst('Exception: ', '');
-        if (msg == '请先登录' || msg.contains('(401)')) {
-          _redirectToLogin();
+        if (isAuthError(msg)) {
+          redirectToLogin();
           return;
         }
         setState(() {
@@ -102,17 +101,6 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Future<void> _redirectToLogin() async {
-    final authService = await AuthService.getInstance();
-    await authService.logout();
-    if (mounted) {
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (_) => false,
-      );
     }
   }
 

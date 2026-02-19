@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
-import '../pages/login_page.dart';
-import '../services/auth_service.dart';
 import '../services/post_service.dart';
+import 'auth_error_handler.dart';
 import 'post_card.dart';
 
 class WaterfallFeed extends StatefulWidget {
@@ -14,7 +13,7 @@ class WaterfallFeed extends StatefulWidget {
   State<WaterfallFeed> createState() => _WaterfallFeedState();
 }
 
-class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveClientMixin {
+class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveClientMixin, AuthErrorHandler {
   @override
   bool get wantKeepAlive => true;
 
@@ -75,8 +74,8 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
     } catch (e) {
       if (mounted) {
         final msg = e.toString().replaceFirst('Exception: ', '');
-        if (msg == '请先登录' || msg.contains('(401)')) {
-          _redirectToLogin();
+        if (isAuthError(msg)) {
+          redirectToLogin();
           return;
         }
         setState(() {
@@ -110,17 +109,6 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Future<void> _redirectToLogin() async {
-    final authService = await AuthService.getInstance();
-    await authService.logout();
-    if (mounted) {
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (_) => false,
-      );
     }
   }
 
