@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'pages/splash_page.dart';
 
-/// System overlay style used across the app: transparent status/navigation bars with dark icons.
+/// System overlay style used across the app: transparent status bar, white navigation bar.
 const kSystemUiOverlayStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
   statusBarIconBrightness: Brightness.dark,
   statusBarBrightness: Brightness.light,
-  systemNavigationBarColor: Colors.transparent,
+  systemNavigationBarColor: Colors.white,
   systemNavigationBarIconBrightness: Brightness.dark,
-  systemNavigationBarDividerColor: Colors.transparent,
 );
 
 class YueMApp extends StatelessWidget {

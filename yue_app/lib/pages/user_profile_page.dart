@@ -60,9 +60,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 .whereType<Map<String, dynamic>>()
                 .map((json) => Post.fromJson(json))
                 .toList();
-            _isFollowing = _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
+            _isFollowing = _extractFollowStatus({}, _userInfo);
             _isLoading = false;
           });
         }
@@ -80,6 +78,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
       };
       await storage.setUserProfileCache(widget.userId, jsonEncode(data));
     } catch (_) {}
+  }
+
+  /// Helper to extract follow status from API response maps.
+  bool _extractFollowStatus(Map<String, dynamic> followStatus, Map<String, dynamic> userInfo) {
+    // Check followStatus API response first (most authoritative)
+    if (followStatus.containsKey('is_following')) return followStatus['is_following'] == true;
+    if (followStatus.containsKey('followed')) return followStatus['followed'] == true;
+    if (followStatus.containsKey('following')) return followStatus['following'] == true;
+    // Fallback to userInfo
+    if (userInfo.containsKey('is_following')) return userInfo['is_following'] == true;
+    if (userInfo.containsKey('followed')) return userInfo['followed'] == true;
+    if (userInfo.containsKey('following')) return userInfo['following'] == true;
+    return false;
   }
 
   Future<void> _loadUserProfile() async {
@@ -100,10 +111,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
           if (!_isToggling) {
-            _isFollowing = followStatus['is_following'] as bool?
-                ?? _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
+            _isFollowing = _extractFollowStatus(followStatus, _userInfo);
           }
           _isLoading = false;
         });
@@ -146,10 +154,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
       } else {
         await postService.followUser(widget.userId);
       }
+      // After successful API call, verify the follow status from server
+      try {
+        final status = await postService.getFollowStatus(widget.userId);
+        if (mounted) {
+          final serverFollowing = _extractFollowStatus(status, _userInfo);
+          if (serverFollowing != _isFollowing) {
+            setState(() => _isFollowing = serverFollowing);
+          }
+        }
+      } catch (_) {
+        // Verification failed, keep optimistic state
+      }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       // If trying to follow but server says already followed, keep the followed state
-      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
+      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already') || msg.contains('关注'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
