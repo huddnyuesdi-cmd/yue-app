@@ -115,9 +115,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
     }
 
     if (_posts.isEmpty && _isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-      );
+      return const SizedBox.shrink();
     }
 
     if (_posts.isEmpty) {

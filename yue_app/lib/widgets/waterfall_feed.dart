@@ -158,7 +158,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
     }
 
     if (_posts.isEmpty && _isLoading) {
-      return _buildLoadingView();
+      return const SizedBox.shrink();
     }
 
     if (_posts.isEmpty) {
