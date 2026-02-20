@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import 'auth_error_handler.dart';
 import 'post_card.dart';
 
@@ -29,8 +31,40 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
   @override
   void initState() {
     super.initState();
-    _loadPosts();
+    _initData();
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _initData() async {
+    await _loadCachedPosts();
+    _loadPosts();
+  }
+
+  Future<void> _loadCachedPosts() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final cached = storage.getHomeFeedCache();
+      if (cached != null && cached.isNotEmpty && _posts.isEmpty) {
+        final list = jsonDecode(cached) as List;
+        if (mounted) {
+          setState(() {
+            _posts.addAll(
+              list.whereType<Map<String, dynamic>>()
+                  .map((json) => Post.fromJson(json))
+                  .toList(),
+            );
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveFeedCache() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final jsonList = _posts.map((p) => p.toJson()).toList();
+      await storage.setHomeFeedCache(jsonEncode(jsonList));
+    } catch (_) {}
   }
 
   @override
@@ -70,6 +104,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
               response.pagination!.page < response.pagination!.pages;
           _isLoading = false;
         });
+        _saveFeedCache();
       }
     } catch (e) {
       if (mounted) {

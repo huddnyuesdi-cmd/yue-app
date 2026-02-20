@@ -6,6 +6,8 @@ class StorageService {
   static const String _keyCommunityRefreshToken = 'community_refresh_token';
   static const String _keyUserProfile = 'user_profile';
   static const String _keyCommunityUserId = 'community_user_id';
+  static const String _keyUserProfileCachePrefix = 'user_profile_cache_';
+  static const String _keyHomeFeedCache = 'home_feed_cache';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -67,6 +69,24 @@ class StorageService {
 
   String? getUserProfile() {
     return _prefs.getString(_keyUserProfile);
+  }
+
+  // User Profile Cache (by userId)
+  Future<void> setUserProfileCache(String userId, String jsonStr) async {
+    await _prefs.setString('$_keyUserProfileCachePrefix$userId', jsonStr);
+  }
+
+  String? getUserProfileCache(String userId) {
+    return _prefs.getString('$_keyUserProfileCachePrefix$userId');
+  }
+
+  // Home Feed Cache
+  Future<void> setHomeFeedCache(String jsonStr) async {
+    await _prefs.setString(_keyHomeFeedCache, jsonStr);
+  }
+
+  String? getHomeFeedCache() {
+    return _prefs.getString(_keyHomeFeedCache);
   }
 
   // Clear all auth data

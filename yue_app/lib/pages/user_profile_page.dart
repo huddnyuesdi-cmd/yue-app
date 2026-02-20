@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 
@@ -29,12 +31,55 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool _isLoading = true;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
+  bool _isToggling = false;
   double _followScale = 1.0;
 
   @override
   void initState() {
     super.initState();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _loadCachedProfile();
     _loadUserProfile();
+  }
+
+  Future<void> _loadCachedProfile() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final cached = storage.getUserProfileCache(widget.userId);
+      if (cached != null && cached.isNotEmpty) {
+        final data = jsonDecode(cached) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _userInfo = data['userInfo'] as Map<String, dynamic>? ?? {};
+            _stats = data['stats'] as Map<String, dynamic>? ?? {};
+            final postsJson = data['posts'] as List? ?? [];
+            _posts = postsJson
+                .whereType<Map<String, dynamic>>()
+                .map((json) => Post.fromJson(json))
+                .toList();
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfileCache() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final data = {
+        'userInfo': _userInfo,
+        'stats': _stats,
+        'posts': _posts.map((p) => p.toJson()).toList(),
+      };
+      await storage.setUserProfileCache(widget.userId, jsonEncode(data));
+    } catch (_) {}
   }
 
   Future<void> _loadUserProfile() async {
@@ -52,11 +97,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
-          _isFollowing = _userInfo['is_following'] as bool?
-              ?? _userInfo['followed'] as bool?
-              ?? false;
+          if (!_isToggling) {
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+          }
           _isLoading = false;
         });
+        _saveProfileCache();
       }
 
       // Also check follow status via dedicated API
@@ -81,20 +129,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
-          _isFollowing = _userInfo['is_following'] as bool?
-              ?? _userInfo['followed'] as bool?
-              ?? false;
+          if (!_isToggling) {
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+          }
         });
+        _saveProfileCache();
       }
       _loadFollowStatus();
     } catch (_) {}
   }
 
   Future<void> _loadFollowStatus() async {
+    if (_isToggling) return;
     try {
       final postService = await PostService.getInstance();
       final status = await postService.getFollowStatus(widget.userId);
-      if (mounted && status.isNotEmpty) {
+      if (mounted && status.isNotEmpty && !_isToggling) {
         final following = status['is_following'] as bool?
             ?? status['following'] as bool?
             ?? status['followed'] as bool?
@@ -107,6 +159,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _toggleFollow() async {
     if (_isFollowLoading) return;
     _isFollowLoading = true;
+    _isToggling = true;
 
     final wasFollowing = _isFollowing;
     // Optimistic update with scale animation
@@ -122,6 +175,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       final postService = await PostService.getInstance();
       if (wasFollowing) {
         await postService.unfollowUser(widget.userId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已取消关注'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       } else {
         await postService.toggleFollow(widget.userId);
       }
@@ -134,6 +195,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
         }
         return;
       }
+      // If trying to unfollow but server says not following, keep the unfollowed state
+      if (wasFollowing && (msg.contains('未关注') || msg.contains('not following'))) {
+        if (mounted) {
+          setState(() => _isFollowing = false);
+        }
+        return;
+      }
       // Revert on other failures
       if (mounted) {
         setState(() => _isFollowing = wasFollowing);
@@ -143,6 +211,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } finally {
       _isFollowLoading = false;
+      _isToggling = false;
     }
   }
 
