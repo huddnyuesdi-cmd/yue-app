@@ -8,6 +8,9 @@ class StorageService {
   static const String _keyCommunityUserId = 'community_user_id';
   static const String _keyUserProfileCachePrefix = 'user_profile_cache_';
   static const String _keyHomeFeedCache = 'home_feed_cache';
+  static const String _keyFollowStatusPrefix = 'follow_status_';
+  static const String _keyPostLikePrefix = 'post_liked_';
+  static const String _keyPostCollectPrefix = 'post_collected_';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -87,6 +90,39 @@ class StorageService {
 
   String? getHomeFeedCache() {
     return _prefs.getString(_keyHomeFeedCache);
+  }
+
+  // Follow Status Cache (by userId)
+  Future<void> setFollowStatus(String userId, bool isFollowing) async {
+    await _prefs.setBool('$_keyFollowStatusPrefix$userId', isFollowing);
+  }
+
+  bool? getFollowStatus(String userId) {
+    final key = '$_keyFollowStatusPrefix$userId';
+    if (_prefs.containsKey(key)) return _prefs.getBool(key);
+    return null;
+  }
+
+  // Post Like State Cache (by postId)
+  Future<void> setPostLiked(int postId, bool liked) async {
+    await _prefs.setBool('$_keyPostLikePrefix$postId', liked);
+  }
+
+  bool? getPostLiked(int postId) {
+    final key = '$_keyPostLikePrefix$postId';
+    if (_prefs.containsKey(key)) return _prefs.getBool(key);
+    return null;
+  }
+
+  // Post Collect State Cache (by postId)
+  Future<void> setPostCollected(int postId, bool collected) async {
+    await _prefs.setBool('$_keyPostCollectPrefix$postId', collected);
+  }
+
+  bool? getPostCollected(int postId) {
+    final key = '$_keyPostCollectPrefix$postId';
+    if (_prefs.containsKey(key)) return _prefs.getBool(key);
+    return null;
   }
 
   // Clear all auth data

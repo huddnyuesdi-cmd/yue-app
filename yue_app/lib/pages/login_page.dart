@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../app.dart';
 import '../config/layout_config.dart';
 import '../services/auth_service.dart';
 import '../widgets/slide_captcha_widget.dart';
@@ -116,9 +118,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: kSystemUiOverlayStyle,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,
           child: Center(
@@ -241,6 +245,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           ),
           ),
         ),
+      ),
       ),
     );
   }

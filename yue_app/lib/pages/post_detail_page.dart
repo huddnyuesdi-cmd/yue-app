@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../models/comment_model.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/verified_badge.dart';
 import 'user_profile_page.dart';
 
@@ -38,9 +39,32 @@ class _PostDetailPageState extends State<PostDetailPage> {
   void initState() {
     super.initState();
     _post = widget.initialPost;
+    _applyCachedInteractionStates();
     _loadCurrentUser();
     _loadPostDetail();
     _loadComments();
+  }
+
+  /// Apply locally cached like/collect states to avoid flicker on load.
+  Future<void> _applyCachedInteractionStates() async {
+    if (_post == null) return;
+    final storage = await StorageService.getInstance();
+    final cachedLiked = storage.getPostLiked(_post!.id);
+    final cachedCollected = storage.getPostCollected(_post!.id);
+    if ((cachedLiked != null || cachedCollected != null) && mounted) {
+      setState(() {
+        _post = Post(
+          id: _post!.id, userId: _post!.userId, title: _post!.title,
+          content: _post!.content, type: _post!.type, viewCount: _post!.viewCount,
+          likeCount: _post!.likeCount, collectCount: _post!.collectCount,
+          commentCount: _post!.commentCount, createdAt: _post!.createdAt,
+          image: _post!.image, images: _post!.images, tags: _post!.tags,
+          liked: cachedLiked ?? _post!.liked,
+          collected: cachedCollected ?? _post!.collected,
+          user: _post!.user,
+        );
+      });
+    }
   }
 
   @override
@@ -59,6 +83,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           _post = post;
           _isLoading = false;
         });
+        // Persist interaction states locally
+        final storage = await StorageService.getInstance();
+        await storage.setPostLiked(post.id, post.liked);
+        await storage.setPostCollected(post.id, post.collected);
       }
     } catch (e) {
       if (mounted) {
@@ -114,8 +142,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     try {
       final postService = await PostService.getInstance();
       await postService.toggleLike(_post!.id);
-      // Refresh to get server truth
-      await _loadPostDetail();
+      // Persist locally
+      final storage = await StorageService.getInstance();
+      await storage.setPostLiked(_post!.id, newLiked);
     } catch (e) {
       // Revert on error
       if (mounted) {
@@ -165,8 +194,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     try {
       final postService = await PostService.getInstance();
       await postService.toggleCollect(_post!.id);
-      // Refresh to get server truth
-      await _loadPostDetail();
+      // Persist locally
+      final storage = await StorageService.getInstance();
+      await storage.setPostCollected(_post!.id, newCollected);
     } catch (e) {
       // Revert on error
       if (mounted) {

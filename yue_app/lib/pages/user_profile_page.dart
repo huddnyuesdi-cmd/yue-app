@@ -41,11 +41,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _initData() async {
-    await _loadCachedProfile();
+    // Load follow state from local cache first (instant, no flicker)
+    final storage = await StorageService.getInstance();
+    final cachedFollow = storage.getFollowStatus(widget.userId);
+    if (cachedFollow != null && mounted) {
+      setState(() => _isFollowing = cachedFollow);
+    }
+    await _loadCachedProfile(skipFollowState: cachedFollow != null);
     _loadUserProfile();
   }
 
-  Future<void> _loadCachedProfile() async {
+  Future<void> _loadCachedProfile({bool skipFollowState = false}) async {
     try {
       final storage = await StorageService.getInstance();
       final cached = storage.getUserProfileCache(widget.userId);
@@ -60,9 +66,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 .whereType<Map<String, dynamic>>()
                 .map((json) => Post.fromJson(json))
                 .toList();
-            _isFollowing = _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
+            if (!skipFollowState) {
+              _isFollowing = _extractFollowStatus({}, _userInfo);
+            }
             _isLoading = false;
           });
         }
@@ -82,6 +88,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
     } catch (_) {}
   }
 
+  /// Helper to extract follow status from API response maps.
+  bool _extractFollowStatus(Map<String, dynamic> followStatus, Map<String, dynamic> userInfo) {
+    // Check followStatus API response first (most authoritative)
+    if (followStatus.containsKey('is_following')) return followStatus['is_following'] == true;
+    if (followStatus.containsKey('followed')) return followStatus['followed'] == true;
+    if (followStatus.containsKey('following')) return followStatus['following'] == true;
+    // Fallback to userInfo
+    if (userInfo.containsKey('is_following')) return userInfo['is_following'] == true;
+    if (userInfo.containsKey('followed')) return userInfo['followed'] == true;
+    if (userInfo.containsKey('following')) return userInfo['following'] == true;
+    return false;
+  }
+
   Future<void> _loadUserProfile() async {
     try {
       final postService = await PostService.getInstance();
@@ -90,20 +109,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
         postService.getUserInfo(widget.userId),
         postService.getUserStats(widget.userId),
         postService.getUserPosts(widget.userId),
+        postService.getFollowStatus(widget.userId),
       ]);
 
       if (mounted) {
+        final followStatus = results[3] as Map<String, dynamic>;
         setState(() {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
           if (!_isToggling) {
-            _isFollowing = _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
+            _isFollowing = _extractFollowStatus(followStatus, _userInfo);
           }
           _isLoading = false;
         });
+        // Persist follow state locally
+        final storage = await StorageService.getInstance();
+        await storage.setFollowStatus(widget.userId, _isFollowing);
         _saveProfileCache();
       }
     } catch (_) {
@@ -111,30 +133,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  Future<void> _refreshProfile() async {
-    try {
-      final postService = await PostService.getInstance();
-      final results = await Future.wait([
-        postService.getUserInfo(widget.userId),
-        postService.getUserStats(widget.userId),
-        postService.getUserPosts(widget.userId),
-      ]);
-      if (mounted) {
-        setState(() {
-          _userInfo = results[0] as Map<String, dynamic>;
-          _stats = results[1] as Map<String, dynamic>;
-          _posts = (results[2] as PostListResponse).posts;
-          if (!_isToggling) {
-            _isFollowing = _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
-          }
-        });
-        _saveProfileCache();
-      }
-    } catch (_) {}
   }
 
   Future<void> _toggleFollow() async {
@@ -167,17 +165,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
       } else {
         await postService.followUser(widget.userId);
       }
+      // After successful API call, verify the follow status from server
+      try {
+        final status = await postService.getFollowStatus(widget.userId);
+        if (mounted) {
+          final serverFollowing = _extractFollowStatus(status, _userInfo);
+          if (serverFollowing != _isFollowing) {
+            setState(() => _isFollowing = serverFollowing);
+          }
+        }
+      } catch (_) {
+        // Verification failed, keep optimistic state
+      }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       // If trying to follow but server says already followed, keep the followed state
-      if (!wasFollowing && (msg.contains('已关注') || msg.contains('already'))) {
+      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
         return;
       }
       // If trying to unfollow but server says not following, keep the unfollowed state
-      if (wasFollowing && (msg.contains('未关注') || msg.contains('not following'))) {
+      if (wasFollowing && (msg.contains('未关注') || msg.contains('没有关注') || msg.contains('not following'))) {
         if (mounted) {
           setState(() => _isFollowing = false);
         }
@@ -193,6 +203,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     } finally {
       _isFollowLoading = false;
       _isToggling = false;
+      // Persist follow state locally
+      StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
     }
   }
 
@@ -213,40 +225,36 @@ class _UserProfilePageState extends State<UserProfilePage> {
           : LayoutBuilder(
               builder: (context, constraints) {
                 final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
-                return RefreshIndicator(
-                  onRefresh: _refreshProfile,
-                  color: const Color(0xFF222222),
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
-                      SliverToBoxAdapter(child: _buildStatsRow()),
-                      if (_posts.isNotEmpty)
-                        SliverPadding(
-                          padding: const EdgeInsets.all(8),
-                          sliver: SliverMasonryGrid.count(
-                            crossAxisCount: crossAxisCount,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childCount: _posts.length,
-                            itemBuilder: (context, index) => PostCard(post: _posts[index]),
-                          ),
-                        )
-                      else
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                                SizedBox(height: 12),
-                                Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
-                              ],
-                            ),
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
+                    SliverToBoxAdapter(child: _buildStatsRow()),
+                    if (_posts.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverMasonryGrid.count(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childCount: _posts.length,
+                          itemBuilder: (context, index) => PostCard(post: _posts[index]),
+                        ),
+                      )
+                    else
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+                              SizedBox(height: 12),
+                              Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 );
               },
             ),
