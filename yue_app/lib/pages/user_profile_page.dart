@@ -41,6 +41,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _initData() async {
+    // Load follow state from local cache first (instant, no flicker)
+    final storage = await StorageService.getInstance();
+    final cachedFollow = storage.getFollowStatus(widget.userId);
+    if (cachedFollow != null && mounted) {
+      setState(() => _isFollowing = cachedFollow);
+    }
     await _loadCachedProfile();
     _loadUserProfile();
   }
@@ -115,6 +121,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
           }
           _isLoading = false;
         });
+        // Persist follow state locally
+        final storage = await StorageService.getInstance();
+        await storage.setFollowStatus(widget.userId, _isFollowing);
         _saveProfileCache();
       }
     } catch (_) {
@@ -192,6 +201,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     } finally {
       _isFollowLoading = false;
       _isToggling = false;
+      // Persist follow state locally
+      StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
     }
   }
 
