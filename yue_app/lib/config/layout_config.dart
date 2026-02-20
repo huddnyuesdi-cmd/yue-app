@@ -1,6 +1,7 @@
 class LayoutConfig {
   static const double tabletBreakpoint = 600;
   static const double largeTabletBreakpoint = 900;
+  static const double maxFormWidth = 480;
 
   static int getGridColumnCount(double width) {
     if (width >= largeTabletBreakpoint) return 4;

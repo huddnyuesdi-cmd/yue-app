@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
@@ -195,7 +196,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         centerTitle: true,
       ),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
+        child: ListView(
         children: [
           const SizedBox(height: 16),
           // Account section
@@ -297,6 +301,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 32),
         ],
+        ),
+      ),
       ),
     );
   }

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/auth_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
@@ -14,7 +16,20 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    await _requestPermissions();
     _checkAuth();
+  }
+
+  Future<void> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      await [
+        Permission.storage,
+      ].request();
+    }
   }
 
   Future<void> _checkAuth() async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../pages/post_detail_page.dart';
 import 'verified_badge.dart';
@@ -14,7 +15,8 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final pixelRatio = MediaQuery.of(context).devicePixelRatio;
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardCacheWidth = (screenWidth * 0.5 * pixelRatio).toInt();
+    final columnCount = LayoutConfig.getGridColumnCount(screenWidth);
+    final cardCacheWidth = (screenWidth / columnCount * pixelRatio).toInt();
     final avatarCacheWidth = (20 * pixelRatio).toInt();
 
     return GestureDetector(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../services/auth_service.dart';
 import '../widgets/slide_captcha_widget.dart';
 import 'home_page.dart';
@@ -141,6 +142,9 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             // Form
             Expanded(
+              child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
@@ -280,6 +284,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 24),
                   ],
                 ),
+              ),
+              ),
               ),
             ),
           ],
