@@ -32,6 +32,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   bool _isToggling = false;
+  bool _isRefreshing = false;
   double _followScale = 1.0;
 
   @override
@@ -90,15 +91,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
         postService.getUserInfo(widget.userId),
         postService.getUserStats(widget.userId),
         postService.getUserPosts(widget.userId),
+        postService.getFollowStatus(widget.userId),
       ]);
 
       if (mounted) {
+        final followStatus = results[3] as Map<String, dynamic>;
         setState(() {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
           if (!_isToggling) {
-            _isFollowing = _userInfo['is_following'] as bool?
+            _isFollowing = followStatus['is_following'] as bool?
+                ?? _userInfo['is_following'] as bool?
                 ?? _userInfo['followed'] as bool?
                 ?? false;
           }
@@ -120,14 +124,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
         postService.getUserInfo(widget.userId),
         postService.getUserStats(widget.userId),
         postService.getUserPosts(widget.userId),
+        postService.getFollowStatus(widget.userId),
       ]);
       if (mounted) {
+        final followStatus = results[3] as Map<String, dynamic>;
         setState(() {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
           if (!_isToggling) {
-            _isFollowing = _userInfo['is_following'] as bool?
+            _isFollowing = followStatus['is_following'] as bool?
+                ?? _userInfo['is_following'] as bool?
                 ?? _userInfo['followed'] as bool?
                 ?? false;
           }
@@ -213,40 +220,36 @@ class _UserProfilePageState extends State<UserProfilePage> {
           : LayoutBuilder(
               builder: (context, constraints) {
                 final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
-                return RefreshIndicator(
-                  onRefresh: _refreshProfile,
-                  color: const Color(0xFF222222),
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
-                      SliverToBoxAdapter(child: _buildStatsRow()),
-                      if (_posts.isNotEmpty)
-                        SliverPadding(
-                          padding: const EdgeInsets.all(8),
-                          sliver: SliverMasonryGrid.count(
-                            crossAxisCount: crossAxisCount,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childCount: _posts.length,
-                            itemBuilder: (context, index) => PostCard(post: _posts[index]),
-                          ),
-                        )
-                      else
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                                SizedBox(height: 12),
-                                Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
-                              ],
-                            ),
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
+                    SliverToBoxAdapter(child: _buildStatsRow()),
+                    if (_posts.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverMasonryGrid.count(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childCount: _posts.length,
+                          itemBuilder: (context, index) => PostCard(post: _posts[index]),
+                        ),
+                      )
+                    else
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+                              SizedBox(height: 12),
+                              Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -302,6 +305,36 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+              // Refresh button on background top-right
+              Positioned(
+                right: 8,
+                top: MediaQuery.of(context).padding.top + 4,
+                child: GestureDetector(
+                  onTap: () async {
+                    if (_isRefreshing) return;
+                    setState(() => _isRefreshing = true);
+                    await _refreshProfile();
+                    if (mounted) setState(() => _isRefreshing = false);
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: _isRefreshing
+                        ? const Padding(
+                            padding: EdgeInsets.all(9),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.refresh, color: Colors.white, size: 20),
                   ),
                 ),
               ),
