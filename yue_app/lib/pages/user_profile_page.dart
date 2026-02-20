@@ -162,7 +162,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     });
 
     // Release button lock after short debounce so user isn't blocked by API latency
-    Future.delayed(const Duration(milliseconds: 350), () {
+    Future.delayed(const Duration(milliseconds: 10), () {
       if (mounted) _isFollowLoading = false;
     });
 
