@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'discover_page.dart';
 import 'home_feed_page.dart';
 import 'notifications_page.dart';
@@ -51,13 +52,24 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isWideScreen = ResponsiveBreakpoints.of(context).largerThan(TABLET);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        child: isWideScreen
+            ? Center(
+                child: MaxWidthBox(
+                  maxWidth: 800,
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: _pages,
+                  ),
+                ),
+              )
+            : IndexedStack(
+                index: _currentIndex,
+                children: _pages,
+              ),
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
