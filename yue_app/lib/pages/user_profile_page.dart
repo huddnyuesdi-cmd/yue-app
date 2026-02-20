@@ -47,11 +47,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (cachedFollow != null && mounted) {
       setState(() => _isFollowing = cachedFollow);
     }
-    await _loadCachedProfile();
+    await _loadCachedProfile(skipFollowState: cachedFollow != null);
     _loadUserProfile();
   }
 
-  Future<void> _loadCachedProfile() async {
+  Future<void> _loadCachedProfile({bool skipFollowState = false}) async {
     try {
       final storage = await StorageService.getInstance();
       final cached = storage.getUserProfileCache(widget.userId);
@@ -66,7 +66,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 .whereType<Map<String, dynamic>>()
                 .map((json) => Post.fromJson(json))
                 .toList();
-            _isFollowing = _extractFollowStatus({}, _userInfo);
+            if (!skipFollowState) {
+              _isFollowing = _extractFollowStatus({}, _userInfo);
+            }
             _isLoading = false;
           });
         }
