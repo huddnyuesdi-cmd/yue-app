@@ -183,9 +183,23 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
   }
 
+  Future<void> _refreshAll() async {
+    _isLoadingPosts = false;
+    _isLoadingCollections = false;
+    _isLoadingLikes = false;
+    if (_user != null) {
+      await _loadCommunityProfile(_user!);
+    } else {
+      await _loadUser();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return NestedScrollView(
+    return RefreshIndicator(
+      onRefresh: _refreshAll,
+      color: const Color(0xFF222222),
+      child: NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) {
         return [
           SliverToBoxAdapter(child: _buildHeader()),
@@ -221,6 +235,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           _buildPostGrid(_likes, _isLoadingLikes),
         ],
       ),
+    ),
     );
   }
 

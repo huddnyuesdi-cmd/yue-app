@@ -29,6 +29,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
   int? _currentUserId;
   String? _currentUserDisplayId;
   final Set<int> _loadingReplies = {};
+  bool _isLikeLoading = false;
+  bool _isCollectLoading = false;
+  double _likeScale = 1.0;
+  double _collectScale = 1.0;
 
   @override
   void initState() {
@@ -84,32 +88,104 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Future<void> _handleLike() async {
-    if (_post == null) return;
+    if (_post == null || _isLikeLoading) return;
+    _isLikeLoading = true;
+
+    // Optimistic update
+    final wasLiked = _post!.liked;
+    final oldCount = _post!.likeCount;
+    final newLiked = !wasLiked;
+    final newCount = newLiked ? oldCount + 1 : (oldCount > 0 ? oldCount - 1 : 0);
+    setState(() {
+      _post = Post(
+        id: _post!.id, userId: _post!.userId, title: _post!.title,
+        content: _post!.content, type: _post!.type, viewCount: _post!.viewCount,
+        likeCount: newCount, collectCount: _post!.collectCount,
+        commentCount: _post!.commentCount, createdAt: _post!.createdAt,
+        image: _post!.image, images: _post!.images, tags: _post!.tags,
+        liked: newLiked, collected: _post!.collected, user: _post!.user,
+      );
+      _likeScale = 1.3;
+    });
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _likeScale = 1.0);
+    });
+
     try {
       final postService = await PostService.getInstance();
       await postService.toggleLike(_post!.id);
+      // Refresh to get server truth
       await _loadPostDetail();
     } catch (e) {
+      // Revert on error
       if (mounted) {
+        setState(() {
+          _post = Post(
+            id: _post!.id, userId: _post!.userId, title: _post!.title,
+            content: _post!.content, type: _post!.type, viewCount: _post!.viewCount,
+            likeCount: oldCount, collectCount: _post!.collectCount,
+            commentCount: _post!.commentCount, createdAt: _post!.createdAt,
+            image: _post!.image, images: _post!.images, tags: _post!.tags,
+            liked: wasLiked, collected: _post!.collected, user: _post!.user,
+          );
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
       }
+    } finally {
+      _isLikeLoading = false;
     }
   }
 
   Future<void> _handleCollect() async {
-    if (_post == null) return;
+    if (_post == null || _isCollectLoading) return;
+    _isCollectLoading = true;
+
+    // Optimistic update
+    final wasCollected = _post!.collected;
+    final oldCount = _post!.collectCount;
+    final newCollected = !wasCollected;
+    final newCount = newCollected ? oldCount + 1 : (oldCount > 0 ? oldCount - 1 : 0);
+    setState(() {
+      _post = Post(
+        id: _post!.id, userId: _post!.userId, title: _post!.title,
+        content: _post!.content, type: _post!.type, viewCount: _post!.viewCount,
+        likeCount: _post!.likeCount, collectCount: newCount,
+        commentCount: _post!.commentCount, createdAt: _post!.createdAt,
+        image: _post!.image, images: _post!.images, tags: _post!.tags,
+        liked: _post!.liked, collected: newCollected, user: _post!.user,
+      );
+      _collectScale = 1.3;
+    });
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _collectScale = 1.0);
+    });
+
     try {
       final postService = await PostService.getInstance();
       await postService.toggleCollect(_post!.id);
+      // Refresh to get server truth
       await _loadPostDetail();
     } catch (e) {
+      // Revert on error
       if (mounted) {
+        setState(() {
+          _post = Post(
+            id: _post!.id, userId: _post!.userId, title: _post!.title,
+            content: _post!.content, type: _post!.type, viewCount: _post!.viewCount,
+            likeCount: _post!.likeCount, collectCount: oldCount,
+            commentCount: _post!.commentCount, createdAt: _post!.createdAt,
+            image: _post!.image, images: _post!.images, tags: _post!.tags,
+            liked: _post!.liked, collected: wasCollected, user: _post!.user,
+          );
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
       }
+    } finally {
+      _isCollectLoading = false;
     }
   }
 
@@ -669,12 +745,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
             label: '${_post?.likeCount ?? 0}',
             color: _post?.liked == true ? const Color(0xFFFF2442) : const Color(0xFF999999),
             onTap: _handleLike,
+            scale: _likeScale,
           ),
           _buildActionButton(
             icon: _post?.collected == true ? Icons.star : Icons.star_border,
             label: '${_post?.collectCount ?? 0}',
             color: _post?.collected == true ? const Color(0xFFFFB800) : const Color(0xFF999999),
             onTap: _handleCollect,
+            scale: _collectScale,
           ),
           _buildActionButton(
             icon: Icons.chat_bubble_outline,
@@ -692,17 +770,23 @@ class _PostDetailPageState extends State<PostDetailPage> {
     required String label,
     required Color color,
     required VoidCallback onTap,
+    double scale = 1.0,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            Text(label, style: TextStyle(fontSize: 10, color: color)),
-          ],
+        child: AnimatedScale(
+          scale: scale,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: color),
+              Text(label, style: TextStyle(fontSize: 10, color: color)),
+            ],
+          ),
         ),
       ),
     );

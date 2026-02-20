@@ -16,14 +16,25 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  int _refreshKey = 0;
+  late List<Widget> _pages;
 
-  final List<Widget> _pages = const [
-    HomeFeedPage(),
-    DiscoverPage(),
-    SizedBox(), // Placeholder for center publish button
-    NotificationsPage(),
-    ProfilePage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _buildPages();
+    _checkForUpdate();
+  }
+
+  void _buildPages() {
+    _pages = [
+      HomeFeedPage(key: ValueKey('home_$_refreshKey')),
+      const DiscoverPage(),
+      const SizedBox(), // Placeholder for center publish button
+      NotificationsPage(key: ValueKey('notif_$_refreshKey')),
+      ProfilePage(key: ValueKey('profile_$_refreshKey')),
+    ];
+  }
 
   @override
   void initState() {
@@ -114,10 +125,18 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildPublishButton() {
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
+      onTap: () async {
+        final result = await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const PublishPage()),
         );
+        if (result == true && mounted) {
+          // Force rebuild all pages to show fresh data
+          setState(() {
+            _refreshKey++;
+            _buildPages();
+            _currentIndex = 0;
+          });
+        }
       },
       child: Container(
         width: 44,
