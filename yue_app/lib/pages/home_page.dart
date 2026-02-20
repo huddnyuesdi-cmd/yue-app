@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import '../config/layout_config.dart';
 import 'discover_page.dart';
 import 'home_feed_page.dart';
 import 'notifications_page.dart';
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage> {
         child: isWideScreen
             ? Center(
                 child: MaxWidthBox(
-                  maxWidth: 800,
+                  maxWidth: LayoutConfig.maxContentWidth,
                   child: IndexedStack(
                     index: _currentIndex,
                     children: _pages,
