@@ -8,12 +8,4 @@ class LayoutConfig {
     if (width >= tabletBreakpoint) return 3;
     return 2;
   }
-
-  static bool isTablet(double width) => width >= tabletBreakpoint;
-
-  static double getFormHorizontalPadding(double width) {
-    if (width >= largeTabletBreakpoint) return (width - maxFormWidth) / 2;
-    if (width >= tabletBreakpoint) return (width - maxFormWidth) / 2;
-    return 28;
-  }
 }
