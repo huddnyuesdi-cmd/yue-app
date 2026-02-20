@@ -6,6 +6,7 @@ import '../models/post_model.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 import 'edit_profile_page.dart';
@@ -259,8 +260,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 SizedBox(
                   height: bgHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    _communityBackground!,
+                  child: EncryptedCachedImage(
+                    imageUrl: _communityBackground!,
                     fit: BoxFit.cover,
                     cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
@@ -285,8 +286,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     backgroundColor: const Color(0xFFF5F5F5),
                     child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
                         ? ClipOval(
-                            child: Image.network(
-                              _communityAvatar!,
+                            child: EncryptedCachedImage(
+                              imageUrl: _communityAvatar!,
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
@@ -301,8 +302,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           )
                         : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
                             ? ClipOval(
-                                child: Image.network(
-                                  _user!.avatar!,
+                                child: EncryptedCachedImage(
+                                  imageUrl: _user!.avatar!,
                                   width: 72,
                                   height: 72,
                                   fit: BoxFit.cover,

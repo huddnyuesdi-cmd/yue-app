@@ -8,6 +8,7 @@ import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 
@@ -311,8 +312,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 SizedBox(
                   height: bgHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    background,
+                  child: EncryptedCachedImage(
+                    imageUrl: background,
                     fit: BoxFit.cover,
                     cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
@@ -355,8 +356,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     backgroundColor: const Color(0xFFF5F5F5),
                     child: avatar.isNotEmpty
                         ? ClipOval(
-                            child: Image.network(
-                              avatar,
+                            child: EncryptedCachedImage(
+                              imageUrl: avatar,
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,

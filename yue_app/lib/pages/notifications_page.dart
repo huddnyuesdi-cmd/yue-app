@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/post_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -259,8 +260,8 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
                     backgroundColor: _getNotificationColor(notifType).withValues(alpha: 0.1),
                     child: senderAvatar != null && senderAvatar.isNotEmpty
                         ? ClipOval(
-                            child: Image.network(
-                              senderAvatar,
+                            child: EncryptedCachedImage(
+                              imageUrl: senderAvatar,
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
