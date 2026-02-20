@@ -16,6 +16,7 @@ class StorageService {
 
   static const String _obfuscationKey = 'YueM@2024!Secure#Key';
   static const String _encPrefix = 'e:';
+  static const String _migrated = '_k_migrated';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -26,11 +27,75 @@ class StorageService {
     if (_instance == null) {
       _instance = StorageService._();
       _instance!._prefs = await SharedPreferences.getInstance();
+      await _instance!._migrateKeys();
     }
     return _instance!;
   }
 
-  // --- Obfuscation helpers ---
+  // --- Key obfuscation ---
+
+  static String _obfuscateKey(String key) {
+    final keyBytes = utf8.encode(_obfuscationKey);
+    final inputBytes = utf8.encode(key);
+    final result = Uint8List(inputBytes.length);
+    for (int i = 0; i < inputBytes.length; i++) {
+      result[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    return 'k_${base64Url.encode(result)}';
+  }
+
+  // Migrate old plaintext keys to obfuscated keys
+  Future<void> _migrateKeys() async {
+    if (_prefs.getBool(_migrated) == true) return;
+
+    final oldKeys = [
+      _keyUserCenterToken,
+      _keyCommunityToken,
+      _keyCommunityRefreshToken,
+      _keyUserProfile,
+      _keyCommunityUserId,
+      _keyHomeFeedCache,
+    ];
+
+    for (final oldKey in oldKeys) {
+      final value = _prefs.get(oldKey);
+      if (value != null) {
+        final newKey = _obfuscateKey(oldKey);
+        if (value is String) {
+          await _prefs.setString(newKey, value);
+        } else if (value is int) {
+          await _prefs.setString(newKey, _obfuscate(value.toString()));
+        } else if (value is bool) {
+          await _prefs.setString(newKey, _obfuscate(value.toString()));
+        }
+        await _prefs.remove(oldKey);
+      }
+    }
+
+    // Migrate dynamic-key entries (follow_status_*, post_liked_*, post_collected_*, user_profile_cache_*)
+    final allKeys = _prefs.getKeys().toList();
+    for (final oldKey in allKeys) {
+      if (oldKey.startsWith(_keyFollowStatusPrefix) ||
+          oldKey.startsWith(_keyPostLikePrefix) ||
+          oldKey.startsWith(_keyPostCollectPrefix) ||
+          oldKey.startsWith(_keyUserProfileCachePrefix)) {
+        final value = _prefs.get(oldKey);
+        if (value != null) {
+          final newKey = _obfuscateKey(oldKey);
+          if (value is String) {
+            await _prefs.setString(newKey, value);
+          } else if (value is bool) {
+            await _prefs.setString(newKey, _obfuscate(value.toString()));
+          }
+          await _prefs.remove(oldKey);
+        }
+      }
+    }
+
+    await _prefs.setBool(_migrated, true);
+  }
+
+  // --- Value obfuscation helpers ---
 
   static String _obfuscate(String value) {
     final keyBytes = utf8.encode(_obfuscationKey);
@@ -57,11 +122,11 @@ class StorageService {
   }
 
   Future<void> _setObfuscatedString(String key, String value) async {
-    await _prefs.setString(key, _obfuscate(value));
+    await _prefs.setString(_obfuscateKey(key), _obfuscate(value));
   }
 
   String? _getObfuscatedString(String key) {
-    final stored = _prefs.getString(key);
+    final stored = _prefs.getString(_obfuscateKey(key));
     if (stored == null) return null;
     try {
       return _deobfuscate(stored);
@@ -70,8 +135,12 @@ class StorageService {
     }
   }
 
+  Future<void> _removeKey(String key) async {
+    await _prefs.remove(_obfuscateKey(key));
+  }
+
   Future<void> _setObfuscatedBool(String key, bool value) async {
-    await _prefs.setString(key, _obfuscate(value.toString()));
+    await _prefs.setString(_obfuscateKey(key), _obfuscate(value.toString()));
   }
 
   bool? _getObfuscatedBool(String key) {
@@ -83,7 +152,7 @@ class StorageService {
   }
 
   Future<void> _setObfuscatedInt(String key, int value) async {
-    await _prefs.setString(key, _obfuscate(value.toString()));
+    await _prefs.setString(_obfuscateKey(key), _obfuscate(value.toString()));
   }
 
   int? _getObfuscatedInt(String key) {
@@ -129,7 +198,7 @@ class StorageService {
   }
 
   Future<void> clearCommunityUserId() async {
-    await _prefs.remove(_keyCommunityUserId);
+    await _removeKey(_keyCommunityUserId);
   }
 
   // User Profile (JSON string)
@@ -188,11 +257,11 @@ class StorageService {
 
   // Clear all auth data
   Future<void> clearAll() async {
-    await _prefs.remove(_keyUserCenterToken);
-    await _prefs.remove(_keyCommunityToken);
-    await _prefs.remove(_keyCommunityRefreshToken);
-    await _prefs.remove(_keyUserProfile);
-    await _prefs.remove(_keyCommunityUserId);
+    await _removeKey(_keyUserCenterToken);
+    await _removeKey(_keyCommunityToken);
+    await _removeKey(_keyCommunityRefreshToken);
+    await _removeKey(_keyUserProfile);
+    await _removeKey(_keyCommunityUserId);
   }
 
   // Check if logged in
