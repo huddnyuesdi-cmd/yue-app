@@ -108,22 +108,23 @@ class ImageCacheService {
     return null;
   }
 
-  /// Download, encrypt and cache. Returns decrypted bytes.
+  /// Download, encrypt, persist to disk, then read back from local. Returns decrypted bytes.
   Future<Uint8List?> download(String url) async {
     try {
       final response = await _dio.get<List<int>>(url);
       if (response.data == null) return null;
       final bytes = Uint8List.fromList(response.data!);
 
-      // Store in memory
-      _putMemCache(url, bytes);
+      // Encrypt and write to disk first
+      final encrypted = await compute(_xor, bytes);
+      final file = _fileFor(url);
+      await file.writeAsBytes(encrypted, flush: true);
 
-      // Encrypt and write to disk (fire-and-forget)
-      compute(_xor, bytes).then((encrypted) {
-        _fileFor(url).writeAsBytes(encrypted, flush: true).catchError((_) => File(''));
-      });
-
-      return bytes;
+      // Read back from local encrypted file to ensure data is served from disk
+      final localEncrypted = await file.readAsBytes();
+      final decrypted = await compute(_xor, Uint8List.fromList(localEncrypted));
+      _putMemCache(url, decrypted);
+      return decrypted;
     } catch (_) {
       return null;
     }
