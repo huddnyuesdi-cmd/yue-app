@@ -36,12 +36,6 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _checkForUpdate();
-  }
-
   Future<void> _checkForUpdate() async {
     // Brief delay to ensure the home page is fully rendered
     await Future.delayed(const Duration(milliseconds: 500));

@@ -132,7 +132,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
-        _isFollowLoading = false;
         return;
       }
       // Revert on other failures

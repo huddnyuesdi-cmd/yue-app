@@ -184,9 +184,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Future<void> _refreshAll() async {
-    _isLoadingPosts = false;
-    _isLoadingCollections = false;
-    _isLoadingLikes = false;
     if (_user != null) {
       await _loadCommunityProfile(_user!);
     } else {
