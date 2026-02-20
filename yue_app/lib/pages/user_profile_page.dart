@@ -169,7 +169,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       // If trying to follow but server says already followed, keep the followed state
-      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already') || msg.contains('关注'))) {
+      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
