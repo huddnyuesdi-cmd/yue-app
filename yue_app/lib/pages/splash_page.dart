@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../app.dart';
 import '../services/auth_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
@@ -50,9 +52,11 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: kSystemUiOverlayStyle,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -95,6 +99,7 @@ class _SplashPageState extends State<SplashPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
