@@ -28,11 +28,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Map<String, dynamic> _userInfo = {};
   Map<String, dynamic> _stats = {};
   List<Post> _posts = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   bool _isToggling = false;
   double _followScale = 1.0;
+  PostService? _postService;
 
   @override
   void initState() {
@@ -41,6 +42,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _initData() async {
+    // Pre-cache PostService instance for faster follow toggle
+    PostService.getInstance().then((ps) => _postService = ps);
     // Load follow state from local cache first (instant, no flicker)
     final storage = await StorageService.getInstance();
     final cachedFollow = storage.getFollowStatus(widget.userId);
@@ -155,8 +158,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
       if (mounted) setState(() => _followScale = 1.0);
     });
 
+    // Release button lock after short debounce so user isn't blocked by API latency
+    Future.delayed(const Duration(milliseconds: 350), () {
+      _isFollowLoading = false;
+    });
+
+    // Fire-and-forget API call - don't block UI
+    _performFollowApi(wasFollowing);
+  }
+
+  Future<void> _performFollowApi(bool wasFollowing) async {
     try {
-      final postService = await PostService.getInstance();
+      final postService = _postService ?? await PostService.getInstance();
+      _postService = postService;
       if (wasFollowing) {
         await postService.unfollowUser(widget.userId);
         if (mounted) {
@@ -172,19 +186,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
+      // If server says already followed/unfollowed, keep current state
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
-        if (mounted) {
-          setState(() => _isFollowing = true);
-        }
+        if (mounted) setState(() => _isFollowing = true);
         return;
       }
       if (wasFollowing && (msg.contains('未关注') || msg.contains('没有关注') || msg.contains('not following'))) {
-        if (mounted) {
-          setState(() => _isFollowing = false);
-        }
+        if (mounted) setState(() => _isFollowing = false);
         return;
       }
-      // Revert on other failures
+      // Don't revert on timeout/network errors - keep optimistic state
+      if (msg.contains('超时') || msg.contains('timeout') || msg.contains('网络') || msg.contains('连接')) {
+        return;
+      }
+      // Revert only on actual server rejection
       if (mounted) {
         setState(() => _isFollowing = wasFollowing);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -193,7 +208,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } finally {
       _isFollowLoading = false;
-      // Keep _isToggling true briefly to prevent profile reload from overwriting
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) _isToggling = false;
       });
@@ -213,44 +227,52 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
-                return CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
-                    SliverToBoxAdapter(child: _buildStatsRow()),
-                    if (_posts.isNotEmpty)
-                      SliverPadding(
-                        padding: const EdgeInsets.all(8),
-                        sliver: SliverMasonryGrid.count(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childCount: _posts.length,
-                          itemBuilder: (context, index) => PostCard(post: _posts[index]),
-                        ),
-                      )
-                    else
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                              SizedBox(height: 12),
-                              Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
-                            ],
-                          ),
+      body: LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
+                  SliverToBoxAdapter(child: _buildStatsRow()),
+                  if (_posts.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.all(8),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childCount: _posts.length,
+                        itemBuilder: (context, index) => PostCard(post: _posts[index]),
+                      ),
+                    )
+                  else if (_isLoading)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 32),
+                          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    )
+                  else
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+                            SizedBox(height: 12),
+                            Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
     );
   }
 
