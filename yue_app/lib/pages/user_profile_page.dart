@@ -32,7 +32,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   bool _isToggling = false;
-  bool _isRefreshing = false;
   double _followScale = 1.0;
 
   @override
@@ -117,33 +116,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  Future<void> _refreshProfile() async {
-    try {
-      final postService = await PostService.getInstance();
-      final results = await Future.wait([
-        postService.getUserInfo(widget.userId),
-        postService.getUserStats(widget.userId),
-        postService.getUserPosts(widget.userId),
-        postService.getFollowStatus(widget.userId),
-      ]);
-      if (mounted) {
-        final followStatus = results[3] as Map<String, dynamic>;
-        setState(() {
-          _userInfo = results[0] as Map<String, dynamic>;
-          _stats = results[1] as Map<String, dynamic>;
-          _posts = (results[2] as PostListResponse).posts;
-          if (!_isToggling) {
-            _isFollowing = followStatus['is_following'] as bool?
-                ?? _userInfo['is_following'] as bool?
-                ?? _userInfo['followed'] as bool?
-                ?? false;
-          }
-        });
-        _saveProfileCache();
-      }
-    } catch (_) {}
-  }
-
   Future<void> _toggleFollow() async {
     if (_isFollowLoading) return;
     _isFollowLoading = true;
@@ -177,14 +149,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       // If trying to follow but server says already followed, keep the followed state
-      if (!wasFollowing && (msg.contains('已关注') || msg.contains('already'))) {
+      if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
         return;
       }
       // If trying to unfollow but server says not following, keep the unfollowed state
-      if (wasFollowing && (msg.contains('未关注') || msg.contains('not following'))) {
+      if (wasFollowing && (msg.contains('未关注') || msg.contains('没有关注') || msg.contains('not following'))) {
         if (mounted) {
           setState(() => _isFollowing = false);
         }
@@ -305,36 +277,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-                  ),
-                ),
-              ),
-              // Refresh button on background top-right
-              Positioned(
-                right: 8,
-                top: MediaQuery.of(context).padding.top + 4,
-                child: GestureDetector(
-                  onTap: () async {
-                    if (_isRefreshing) return;
-                    setState(() => _isRefreshing = true);
-                    await _refreshProfile();
-                    if (mounted) setState(() => _isRefreshing = false);
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: _isRefreshing
-                        ? const Padding(
-                            padding: EdgeInsets.all(9),
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.refresh, color: Colors.white, size: 20),
                   ),
                 ),
               ),
