@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import 'discover_page.dart';
 import 'home_feed_page.dart';
 import 'notifications_page.dart';
@@ -51,9 +52,18 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scale = LayoutConfig.scaleFactor(screenWidth);
+    final navHeight = (52 * scale).roundToDouble();
+    final iconSize = (24 * scale).clampDouble(20, 28);
+    final fontSize = (10 * scale).clampDouble(9, 12);
+    final publishWidth = (44 * scale).roundToDouble();
+    final publishHeight = (32 * scale).roundToDouble();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        top: false,
         child: IndexedStack(
           index: _currentIndex,
           children: _pages,
@@ -68,15 +78,15 @@ class _HomePageState extends State<HomePage> {
         ),
         child: SafeArea(
           child: SizedBox(
-            height: 52,
+            height: navHeight,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildTabItem(0, Icons.home_rounded, Icons.home_outlined, '首页'),
-                _buildTabItem(1, Icons.explore_rounded, Icons.explore_outlined, '发现'),
-                _buildPublishButton(),
-                _buildTabItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息'),
-                _buildTabItem(4, Icons.person_rounded, Icons.person_outline_rounded, '我的'),
+                _buildTabItem(0, Icons.home_rounded, Icons.home_outlined, '首页', iconSize: iconSize, fontSize: fontSize),
+                _buildTabItem(1, Icons.explore_rounded, Icons.explore_outlined, '发现', iconSize: iconSize, fontSize: fontSize),
+                _buildPublishButton(width: publishWidth, height: publishHeight, iconSize: iconSize),
+                _buildTabItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, '消息', iconSize: iconSize, fontSize: fontSize),
+                _buildTabItem(4, Icons.person_rounded, Icons.person_outline_rounded, '我的', iconSize: iconSize, fontSize: fontSize),
               ],
             ),
           ),
@@ -85,7 +95,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTabItem(int index, IconData activeIcon, IconData icon, String label) {
+  Widget _buildTabItem(int index, IconData activeIcon, IconData icon, String label, {required double iconSize, required double fontSize}) {
     final isActive = _currentIndex == index;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -93,20 +103,20 @@ class _HomePageState extends State<HomePage> {
         if (mounted) setState(() => _currentIndex = index);
       },
       child: SizedBox(
-        width: 56,
+        width: iconSize * 2.4,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               isActive ? activeIcon : icon,
-              size: 24,
+              size: iconSize,
               color: isActive ? const Color(0xFF222222) : const Color(0xFFBBBBBB),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: fontSize,
                 color: isActive ? const Color(0xFF222222) : const Color(0xFFBBBBBB),
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -117,7 +127,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPublishButton() {
+  Widget _buildPublishButton({required double width, required double height, required double iconSize}) {
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.of(context).push(
@@ -133,13 +143,13 @@ class _HomePageState extends State<HomePage> {
         }
       },
       child: Container(
-        width: 44,
-        height: 32,
+        width: width,
+        height: height,
         decoration: BoxDecoration(
           color: const Color(0xFFFF2442),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+        child: Icon(Icons.add_rounded, color: Colors.white, size: iconSize),
       ),
     );
   }

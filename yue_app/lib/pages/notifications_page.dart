@@ -123,68 +123,71 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Header
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(20, 12, 16, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '消息',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF222222),
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          // Header
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(20, 12, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '消息',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF222222),
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: _markAllRead,
-                child: const Text(
-                  '全部已读',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                TextButton(
+                  onPressed: _markAllRead,
+                  child: const Text(
+                    '全部已读',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF999999)),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        // Tabs
-        Container(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFF222222),
-            unselectedLabelColor: const Color(0xFF999999),
-            labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontSize: 15),
-            indicatorColor: const Color(0xFFFF2442),
-            indicatorSize: TabBarIndicatorSize.label,
-            indicatorWeight: 2.5,
-            dividerColor: Colors.transparent,
-            tabs: const [
-              Tab(text: '全部'),
-              Tab(text: '点赞'),
-              Tab(text: '评论'),
-            ],
+          // Tabs
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: const Color(0xFF222222),
+              unselectedLabelColor: const Color(0xFF999999),
+              labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              unselectedLabelStyle: const TextStyle(fontSize: 15),
+              indicatorColor: const Color(0xFFFF2442),
+              indicatorSize: TabBarIndicatorSize.label,
+              indicatorWeight: 2.5,
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: '全部'),
+                Tab(text: '点赞'),
+                Tab(text: '评论'),
+              ],
+            ),
           ),
-        ),
-        // Content
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildNotificationList('all'),
-              _buildNotificationList('like'),
-              _buildNotificationList('comment'),
-            ],
+          // Content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildNotificationList('all'),
+                _buildNotificationList('like'),
+                _buildNotificationList('comment'),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

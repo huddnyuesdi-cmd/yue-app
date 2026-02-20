@@ -133,51 +133,54 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Search bar
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Container(
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(21),
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '搜索笔记、用户、标签',
-                hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(left: 14, right: 8),
-                  child: Icon(Icons.search_rounded, color: Color(0xFFBBBBBB), size: 22),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 0),
-                suffixIcon: _isSearching
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFF999999), size: 18),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          // Search bar
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(21),
               ),
-              style: const TextStyle(fontSize: 14),
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  _search(keyword: value.trim());
-                }
-              },
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: '搜索笔记、用户、标签',
+                  hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 14, right: 8),
+                    child: Icon(Icons.search_rounded, color: Color(0xFFBBBBBB), size: 22),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 0),
+                  suffixIcon: _isSearching
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF999999), size: 18),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                style: const TextStyle(fontSize: 14),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    _search(keyword: value.trim());
+                  }
+                },
+              ),
             ),
           ),
-        ),
-        // Content
-        Expanded(
-          child: _isSearching ? _buildSearchResults() : _buildDiscoverContent(),
-        ),
-      ],
+          // Content
+          Expanded(
+            child: _isSearching ? _buildSearchResults() : _buildDiscoverContent(),
+          ),
+        ],
+      ),
     );
   }
 

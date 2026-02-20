@@ -237,7 +237,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildHeader() {
-    final bgHeight = (_communityBackground != null && _communityBackground!.isNotEmpty) ? 150.0 : 120.0;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final bgHeight = ((_communityBackground != null && _communityBackground!.isNotEmpty) ? 150.0 : 120.0) + statusBarHeight;
     final pixelRatio = MediaQuery.of(context).devicePixelRatio;
     final screenWidth = MediaQuery.of(context).size.width;
     final bgCacheWidth = (screenWidth * pixelRatio).toInt();
