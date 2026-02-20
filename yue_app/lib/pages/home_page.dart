@@ -54,6 +54,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        top: false,
         child: IndexedStack(
           index: _currentIndex,
           children: _pages,

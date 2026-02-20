@@ -138,7 +138,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         // Search bar
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 8, 16, 12),
           child: Container(
             height: 42,
             decoration: BoxDecoration(

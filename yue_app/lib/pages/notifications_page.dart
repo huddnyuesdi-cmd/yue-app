@@ -128,7 +128,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
         // Header
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(20, 12, 16, 0),
+          padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 12, 16, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
