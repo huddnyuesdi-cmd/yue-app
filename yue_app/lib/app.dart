@@ -21,7 +21,11 @@ class YueMApp extends StatelessWidget {
           foregroundColor: Color(0xFF222222),
           elevation: 0,
           scrolledUnderElevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
         ),
       ),
       home: const SplashPage(),

@@ -53,12 +53,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        top: false,
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
