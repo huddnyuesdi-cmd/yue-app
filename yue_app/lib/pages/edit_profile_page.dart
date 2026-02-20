@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../services/post_service.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -114,7 +115,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ],
       ),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
@@ -175,6 +179,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

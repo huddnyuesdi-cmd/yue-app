@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../services/post_service.dart';
 
 class PublishPage extends StatefulWidget {
@@ -107,7 +108,10 @@ class _PublishPageState extends State<PublishPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,6 +243,8 @@ class _PublishPageState extends State<PublishPage> {
               ),
             ),
           ],
+        ),
+        ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/layout_config.dart';
 import '../services/auth_service.dart';
 import '../widgets/slide_captcha_widget.dart';
 import 'register_page.dart';
@@ -120,6 +121,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,
+          child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
@@ -233,6 +237,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 const SizedBox(height: 40),
               ],
             ),
+          ),
+          ),
           ),
         ),
       ),
