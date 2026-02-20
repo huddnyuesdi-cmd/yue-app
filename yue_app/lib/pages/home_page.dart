@@ -52,13 +52,27 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final screenHeight = mediaQuery.size.height;
+    final devicePixelRatio = mediaQuery.devicePixelRatio;
+    final padding = mediaQuery.padding;
+
+    debugPrint('[Layout] Screen: ${screenWidth.toStringAsFixed(1)}x${screenHeight.toStringAsFixed(1)} '
+        'dp, Pixel ratio: ${devicePixelRatio.toStringAsFixed(2)}, '
+        'Resolution: ${(screenWidth * devicePixelRatio).toStringAsFixed(0)}x${(screenHeight * devicePixelRatio).toStringAsFixed(0)} px, '
+        'Padding: top=${padding.top}, bottom=${padding.bottom}');
+
     final scale = LayoutConfig.scaleFactor(screenWidth);
     final navHeight = (52 * scale).roundToDouble();
-    final iconSize = (24 * scale).clampDouble(20, 28);
-    final fontSize = (10 * scale).clampDouble(9, 12);
+    final iconSize = (24 * scale).clamp(20.0, 28.0).toDouble();
+    final fontSize = (10 * scale).clamp(9.0, 12.0).toDouble();
     final publishWidth = (44 * scale).roundToDouble();
     final publishHeight = (32 * scale).roundToDouble();
+
+    debugPrint('[Layout] Scale: ${scale.toStringAsFixed(3)}, '
+        'NavH: $navHeight, IconSize: $iconSize, FontSize: $fontSize, '
+        'Publish: ${publishWidth}x$publishHeight');
 
     return Scaffold(
       backgroundColor: Colors.white,
