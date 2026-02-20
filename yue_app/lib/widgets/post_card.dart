@@ -4,6 +4,8 @@ import '../pages/post_detail_page.dart';
 import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
+  static const double _kMaxCoverImageHeight = 280;
+
   final Post post;
 
   const PostCard({super.key, required this.post});
@@ -43,7 +45,7 @@ class PostCard extends StatelessWidget {
                 topRight: Radius.circular(8),
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 280),
+                constraints: const BoxConstraints(maxHeight: _kMaxCoverImageHeight),
                 child: AspectRatio(
                   aspectRatio: _getImageAspectRatio(),
                   child: Image.network(
