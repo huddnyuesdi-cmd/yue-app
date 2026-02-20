@@ -17,6 +17,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   int _refreshKey = 0;
+  int _profileRefreshKey = 0;
   late List<Widget> _pages;
 
   @override
@@ -32,7 +33,7 @@ class _HomePageState extends State<HomePage> {
       const DiscoverPage(),
       const SizedBox(), // Placeholder for center publish button
       NotificationsPage(key: ValueKey('notif_$_refreshKey')),
-      ProfilePage(key: ValueKey('profile_$_refreshKey')),
+      ProfilePage(key: ValueKey('profile_$_profileRefreshKey')),
     ];
   }
 
@@ -90,7 +91,18 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (mounted) setState(() => _currentIndex = index);
+        if (mounted) {
+          // Trigger profile page rebuild when switching to "我的" tab
+          if (index == 4 && _currentIndex != 4) {
+            setState(() {
+              _currentIndex = index;
+              _profileRefreshKey++;
+              _buildPages();
+            });
+          } else {
+            setState(() => _currentIndex = index);
+          }
+        }
       },
       child: SizedBox(
         width: 56,
@@ -127,6 +139,7 @@ class _HomePageState extends State<HomePage> {
           // Force rebuild all pages to show fresh data
           setState(() {
             _refreshKey++;
+            _profileRefreshKey++;
             _buildPages();
             _currentIndex = 0;
           });
