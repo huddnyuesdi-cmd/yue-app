@@ -508,8 +508,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Widget _buildImageCarousel() {
     final images = _post!.images;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final imageCacheWidth = (screenWidth * pixelRatio).toInt();
     return SizedBox(
-      height: MediaQuery.of(context).size.width,
+      height: screenWidth,
       child: Stack(
         children: [
           PageView.builder(
@@ -522,6 +525,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 images[index].url,
                 fit: BoxFit.cover,
                 width: double.infinity,
+                cacheWidth: imageCacheWidth,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: const Color(0xFFF5F5F5),
                   child: const Center(child: Icon(Icons.image_outlined, size: 48, color: Color(0xFFCCCCCC))),
@@ -793,6 +797,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Widget _buildSmallAvatar(String? avatarUrl, {double size = 28}) {
+    final cacheSize = (size * MediaQuery.of(context).devicePixelRatio).toInt();
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return ClipOval(
         child: Image.network(
@@ -800,6 +805,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          cacheWidth: cacheSize,
+          cacheHeight: cacheSize,
           errorBuilder: (_, __, ___) => _defaultSmallAvatar(size),
         ),
       );

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 
@@ -29,12 +31,55 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool _isLoading = true;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
+  bool _isToggling = false;
   double _followScale = 1.0;
 
   @override
   void initState() {
     super.initState();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _loadCachedProfile();
     _loadUserProfile();
+  }
+
+  Future<void> _loadCachedProfile() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final cached = storage.getUserProfileCache(widget.userId);
+      if (cached != null && cached.isNotEmpty) {
+        final data = jsonDecode(cached) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _userInfo = data['userInfo'] as Map<String, dynamic>? ?? {};
+            _stats = data['stats'] as Map<String, dynamic>? ?? {};
+            final postsJson = data['posts'] as List? ?? [];
+            _posts = postsJson
+                .whereType<Map<String, dynamic>>()
+                .map((json) => Post.fromJson(json))
+                .toList();
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfileCache() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final data = {
+        'userInfo': _userInfo,
+        'stats': _stats,
+        'posts': _posts.map((p) => p.toJson()).toList(),
+      };
+      await storage.setUserProfileCache(widget.userId, jsonEncode(data));
+    } catch (_) {}
   }
 
   Future<void> _loadUserProfile() async {
@@ -52,15 +97,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
-          _isFollowing = _userInfo['is_following'] as bool?
-              ?? _userInfo['followed'] as bool?
-              ?? false;
+          if (!_isToggling) {
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+          }
           _isLoading = false;
         });
+        _saveProfileCache();
       }
-
-      // Also check follow status via dedicated API
-      _loadFollowStatus();
     } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -81,25 +126,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _userInfo = results[0] as Map<String, dynamic>;
           _stats = results[1] as Map<String, dynamic>;
           _posts = (results[2] as PostListResponse).posts;
-          _isFollowing = _userInfo['is_following'] as bool?
-              ?? _userInfo['followed'] as bool?
-              ?? false;
+          if (!_isToggling) {
+            _isFollowing = _userInfo['is_following'] as bool?
+                ?? _userInfo['followed'] as bool?
+                ?? false;
+          }
         });
-      }
-      _loadFollowStatus();
-    } catch (_) {}
-  }
-
-  Future<void> _loadFollowStatus() async {
-    try {
-      final postService = await PostService.getInstance();
-      final status = await postService.getFollowStatus(widget.userId);
-      if (mounted && status.isNotEmpty) {
-        final following = status['is_following'] as bool?
-            ?? status['following'] as bool?
-            ?? status['followed'] as bool?
-            ?? false;
-        setState(() => _isFollowing = following);
+        _saveProfileCache();
       }
     } catch (_) {}
   }
@@ -107,6 +140,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _toggleFollow() async {
     if (_isFollowLoading) return;
     _isFollowLoading = true;
+    _isToggling = true;
 
     final wasFollowing = _isFollowing;
     // Optimistic update with scale animation
@@ -122,8 +156,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
       final postService = await PostService.getInstance();
       if (wasFollowing) {
         await postService.unfollowUser(widget.userId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已取消关注'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       } else {
-        await postService.toggleFollow(widget.userId);
+        await postService.followUser(widget.userId);
       }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -131,6 +173,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
+        }
+        return;
+      }
+      // If trying to unfollow but server says not following, keep the unfollowed state
+      if (wasFollowing && (msg.contains('未关注') || msg.contains('not following'))) {
+        if (mounted) {
+          setState(() => _isFollowing = false);
         }
         return;
       }
@@ -143,6 +192,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } finally {
       _isFollowLoading = false;
+      _isToggling = false;
     }
   }
 
@@ -206,6 +256,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId, {String background = '', int verified = 0, String verifiedName = ''}) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final bgHeight = (background.isNotEmpty ? 150.0 : 120.0) + statusBarHeight;
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bgCacheWidth = (screenWidth * pixelRatio).toInt();
+    final avatarCacheSize = (72 * pixelRatio).toInt();
 
     return Container(
       color: Colors.white,
@@ -224,6 +278,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   child: Image.network(
                     background,
                     fit: BoxFit.cover,
+                    cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
                       height: bgHeight,
                       width: double.infinity,
@@ -269,6 +324,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
                               errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                             ),
                           )

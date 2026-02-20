@@ -588,8 +588,8 @@ class PostService {
     } catch (_) {}
   }
 
-  /// Follow/unfollow user.
-  Future<bool> toggleFollow(String userId) async {
+  /// Follow user.
+  Future<bool> followUser(String userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) {
       throw Exception('请先登录');

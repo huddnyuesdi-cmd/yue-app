@@ -12,6 +12,11 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardCacheWidth = (screenWidth * 0.5 * pixelRatio).toInt();
+    final avatarCacheWidth = (20 * pixelRatio).toInt();
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -51,6 +56,7 @@ class PostCard extends StatelessWidget {
                   child: Image.network(
                     post.coverImage!,
                     fit: BoxFit.cover,
+                    cacheWidth: cardCacheWidth,
                     errorBuilder: (context, error, stackTrace) => Container(
                       color: const Color(0xFFF5F5F5),
                       child: const Center(
@@ -102,7 +108,7 @@ class PostCard extends StatelessWidget {
                 Row(
                   children: [
                     // Avatar
-                    _buildAvatar(),
+                    _buildAvatar(avatarCacheWidth),
                     const SizedBox(width: 6),
                     // Username
                     Expanded(
@@ -149,7 +155,7 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(int cacheWidth) {
     final avatarUrl = post.user.avatar;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return ClipOval(
@@ -158,6 +164,8 @@ class PostCard extends StatelessWidget {
           width: 20,
           height: 20,
           fit: BoxFit.cover,
+          cacheWidth: cacheWidth,
+          cacheHeight: cacheWidth,
           errorBuilder: (context, error, stackTrace) => _defaultAvatar(),
         ),
       );

@@ -52,6 +52,17 @@ class PostUser {
       verifiedName: verifiedName,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'author_auto_id': id,
+      'author_account': userId,
+      'nickname': nickname,
+      'avatar': avatar,
+      'verified': verified,
+      'verified_name': verifiedName,
+    };
+  }
 }
 
 class PostImage {
@@ -66,6 +77,13 @@ class PostImage {
       isFreePreview: json['isFreePreview'] as bool? ?? true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'url': url,
+      'isFreePreview': isFreePreview,
+    };
+  }
 }
 
 class PostTag {
@@ -79,6 +97,13 @@ class PostTag {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
   }
 }
 
@@ -161,5 +186,31 @@ class Post {
   String? get coverImage {
     if (images.isNotEmpty) return images.first.url;
     return image;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'content': content,
+      'type': type,
+      'view_count': viewCount,
+      'like_count': likeCount,
+      'collect_count': collectCount,
+      'comment_count': commentCount,
+      'created_at': createdAt,
+      'image': image,
+      'images': images.map((i) => i.toJson()).toList(),
+      'tags': tags.map((t) => t.toJson()).toList(),
+      'liked': liked,
+      'collected': collected,
+      'author_auto_id': user.id,
+      'author_account': user.userId,
+      'nickname': user.nickname,
+      'avatar': user.avatar,
+      'verified': user.verified,
+      'verified_name': user.verifiedName,
+    };
   }
 }
