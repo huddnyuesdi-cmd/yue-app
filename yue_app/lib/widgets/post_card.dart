@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../pages/post_detail_page.dart';
 import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
-  static const double _kMaxCoverImageHeight = 280;
+  // Maximum image height-to-width ratio to prevent excessively tall images in waterfall grid
+  static const double _kMaxHeightToWidthRatio = 1.6;
 
   final Post post;
 
@@ -14,10 +14,11 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final columnCount = LayoutConfig.getGridColumnCount(screenWidth);
-    final cardCacheWidth = (screenWidth / columnCount * pixelRatio).toInt();
     final avatarCacheWidth = (20 * pixelRatio).toInt();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+    final cardCacheWidth = (constraints.maxWidth * pixelRatio).toInt();
 
     return GestureDetector(
       onTap: () {
@@ -52,7 +53,7 @@ class PostCard extends StatelessWidget {
                 topRight: Radius.circular(8),
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: _kMaxCoverImageHeight),
+                constraints: BoxConstraints(maxHeight: constraints.maxWidth * _kMaxHeightToWidthRatio),
                 child: AspectRatio(
                   aspectRatio: _getImageAspectRatio(),
                   child: Image.network(
@@ -154,6 +155,8 @@ class PostCard extends StatelessWidget {
         ],
       ),
     ),
+    );
+      },
     );
   }
 

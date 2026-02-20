@@ -189,8 +189,12 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
     final imgWidth = (captcha.imageWidth ?? 300).toDouble();
     final imgHeight = (captcha.imageHeight ?? 220).toDouble(); // API returns 220
 
-    // Scale to fit dialog width (max ~280px padding considered)
-    final maxWidth = MediaQuery.of(context).size.width - 120;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+    // Scale to fit actual available width from layout constraints
+    final maxWidth = constraints.hasBoundedWidth
+        ? constraints.maxWidth
+        : (captcha.imageWidth ?? 300).toDouble();
     final scale = maxWidth < imgWidth ? maxWidth / imgWidth : 1.0;
     final displayWidth = imgWidth * scale;
     final displayHeight = imgHeight * scale;
@@ -295,6 +299,8 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
             ),
           ),
       ],
+    );
+      },
     );
   }
 

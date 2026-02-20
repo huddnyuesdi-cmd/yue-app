@@ -31,6 +31,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> with SingleTickerProviderSt
         // Tab header - clean centered tabs like Xiaohongshu
         Container(
           color: Colors.white,
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
           child: TabBar(
             controller: _tabController,
             labelColor: const Color(0xFF222222),
