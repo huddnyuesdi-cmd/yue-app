@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
@@ -160,7 +163,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     // Release button lock after short debounce so user isn't blocked by API latency
     Future.delayed(const Duration(milliseconds: 350), () {
-      _isFollowLoading = false;
+      if (mounted) _isFollowLoading = false;
     });
 
     // Fire-and-forget API call - don't block UI
@@ -185,6 +188,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
         await postService.followUser(widget.userId);
       }
     } catch (e) {
+      // Don't revert on timeout/network errors - keep optimistic state
+      if (e is SocketException || e is TimeoutException) {
+        return;
+      }
+      if (e is DioException && (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError)) {
+        return;
+      }
       final msg = e.toString().replaceFirst('Exception: ', '');
       // If server says already followed/unfollowed, keep current state
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
@@ -195,7 +208,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         if (mounted) setState(() => _isFollowing = false);
         return;
       }
-      // Don't revert on timeout/network errors - keep optimistic state
+      // Don't revert on timeout/network error messages either
       if (msg.contains('超时') || msg.contains('timeout') || msg.contains('网络') || msg.contains('连接')) {
         return;
       }
