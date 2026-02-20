@@ -234,6 +234,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
           final isRead = notification['is_read'] as bool? ?? notification['read'] as bool? ?? false;
           final senderAvatar = notification['sender_avatar'] as String?;
           final senderName = notification['sender_nickname'] as String? ?? notification['sender_name'] as String? ?? '';
+          final avatarCacheSize = (40 * MediaQuery.of(context).devicePixelRatio).toInt();
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -263,8 +264,8 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
-                              cacheWidth: 80,
-                              cacheHeight: 80,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
                               errorBuilder: (_, __, ___) => Icon(
                                 _getNotificationIcon(notifType),
                                 size: 20,
