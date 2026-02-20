@@ -159,7 +159,7 @@ class StorageService {
     return _prefs.getString('${_keyCachedProfileData}_$key');
   }
 
-  // Clear all auth data
+  // Clear follow status cache
   Future<void> clearFollowCache() async {
     _followCache.clear();
     await _prefs.remove(_keyFollowStatus);

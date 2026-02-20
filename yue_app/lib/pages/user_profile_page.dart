@@ -57,11 +57,11 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     super.dispose();
   }
 
-  /// Load cached follow status first for instant UI
+  /// Load cached follow status first for instant UI (only if still loading)
   Future<void> _initFollowCache() async {
     final storage = await StorageService.getInstance();
     final cached = storage.getFollowStatus(widget.userId);
-    if (cached != null && mounted) {
+    if (cached != null && mounted && _isLoading) {
       setState(() => _isFollowing = cached);
     }
   }
