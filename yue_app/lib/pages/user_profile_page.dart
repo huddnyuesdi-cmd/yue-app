@@ -3,6 +3,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 
@@ -22,19 +23,47 @@ class UserProfilePage extends StatefulWidget {
   State<UserProfilePage> createState() => _UserProfilePageState();
 }
 
-class _UserProfilePageState extends State<UserProfilePage> {
+class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProviderStateMixin {
   Map<String, dynamic> _userInfo = {};
   Map<String, dynamic> _stats = {};
   List<Post> _posts = [];
   bool _isLoading = true;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
-  double _followScale = 1.0;
+
+  late AnimationController _followAnimController;
+  late Animation<double> _followScaleAnim;
 
   @override
   void initState() {
     super.initState();
+    _followAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _followScaleAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.8), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.15), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.15, end: 0.95), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 0.95, end: 1.0), weight: 20),
+    ]).animate(CurvedAnimation(parent: _followAnimController, curve: Curves.easeOut));
+    _initFollowCache();
     _loadUserProfile();
+  }
+
+  @override
+  void dispose() {
+    _followAnimController.dispose();
+    super.dispose();
+  }
+
+  /// Load cached follow status first for instant UI
+  Future<void> _initFollowCache() async {
+    final storage = await StorageService.getInstance();
+    final cached = storage.getFollowStatus(widget.userId);
+    if (cached != null && mounted) {
+      setState(() => _isFollowing = cached);
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -57,6 +86,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ?? false;
           _isLoading = false;
         });
+        // Cache the follow status from server
+        final storage = await StorageService.getInstance();
+        await storage.setFollowStatus(widget.userId, _isFollowing);
       }
 
       // Also check follow status via dedicated API
@@ -85,6 +117,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ?? _userInfo['followed'] as bool?
               ?? false;
         });
+        final storage = await StorageService.getInstance();
+        await storage.setFollowStatus(widget.userId, _isFollowing);
       }
       _loadFollowStatus();
     } catch (_) {}
@@ -100,6 +134,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ?? status['followed'] as bool?
             ?? false;
         setState(() => _isFollowing = following);
+        final storage = await StorageService.getInstance();
+        await storage.setFollowStatus(widget.userId, following);
       }
     } catch (_) {}
   }
@@ -109,21 +145,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _isFollowLoading = true;
 
     final wasFollowing = _isFollowing;
-    // Optimistic update with scale animation
-    setState(() {
-      _isFollowing = !wasFollowing;
-      _followScale = 0.85;
-    });
-    Future.delayed(const Duration(milliseconds: 150), () {
-      if (mounted) setState(() => _followScale = 1.0);
-    });
+    // Optimistic update with spring animation
+    setState(() => _isFollowing = !wasFollowing);
+    _followAnimController.forward(from: 0);
 
     try {
       final postService = await PostService.getInstance();
+      final storage = await StorageService.getInstance();
       if (wasFollowing) {
         await postService.unfollowUser(widget.userId);
+        await storage.setFollowStatus(widget.userId, false);
       } else {
         await postService.toggleFollow(widget.userId);
+        await storage.setFollowStatus(widget.userId, true);
       }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -131,6 +165,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
+          final storage = await StorageService.getInstance();
+          await storage.setFollowStatus(widget.userId, true);
+        }
+        return;
+      }
+      // If trying to unfollow but server says already unfollowed, keep the unfollowed state
+      if (wasFollowing && (msg.contains('未关注') || msg.contains('not following') || msg.contains('not found'))) {
+        if (mounted) {
+          setState(() => _isFollowing = false);
+          final storage = await StorageService.getInstance();
+          await storage.setFollowStatus(widget.userId, false);
         }
         return;
       }
@@ -282,11 +327,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 bottom: -24,
                 child: GestureDetector(
                   onTap: _toggleFollow,
-                  child: AnimatedScale(
-                    scale: _followScale,
-                    duration: const Duration(milliseconds: 150),
+                  child: AnimatedBuilder(
+                    animation: _followScaleAnim,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _followScaleAnim.value,
+                        child: child,
+                      );
+                    },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                       decoration: BoxDecoration(
                         color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
