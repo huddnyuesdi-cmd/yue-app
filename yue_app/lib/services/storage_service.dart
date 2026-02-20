@@ -62,7 +62,8 @@ class StorageService {
       if (value != null) {
         final newKey = _obfuscateKey(oldKey);
         if (value is String) {
-          await _prefs.setString(newKey, value);
+          // Obfuscate plaintext values; keep already-obfuscated ones as-is
+          await _prefs.setString(newKey, value.startsWith(_encPrefix) ? value : _obfuscate(value));
         } else if (value is int) {
           await _prefs.setString(newKey, _obfuscate(value.toString()));
         } else if (value is bool) {
@@ -83,7 +84,7 @@ class StorageService {
         if (value != null) {
           final newKey = _obfuscateKey(oldKey);
           if (value is String) {
-            await _prefs.setString(newKey, value);
+            await _prefs.setString(newKey, value.startsWith(_encPrefix) ? value : _obfuscate(value));
           } else if (value is bool) {
             await _prefs.setString(newKey, _obfuscate(value.toString()));
           }
