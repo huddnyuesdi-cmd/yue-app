@@ -106,9 +106,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         });
         _saveProfileCache();
       }
-
-      // Also check follow status via dedicated API
-      _loadFollowStatus();
     } catch (_) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -136,22 +133,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           }
         });
         _saveProfileCache();
-      }
-      _loadFollowStatus();
-    } catch (_) {}
-  }
-
-  Future<void> _loadFollowStatus() async {
-    if (_isToggling) return;
-    try {
-      final postService = await PostService.getInstance();
-      final status = await postService.getFollowStatus(widget.userId);
-      if (mounted && status.isNotEmpty && !_isToggling) {
-        final following = status['is_following'] as bool?
-            ?? status['following'] as bool?
-            ?? status['followed'] as bool?
-            ?? false;
-        setState(() => _isFollowing = following);
       }
     } catch (_) {}
   }
@@ -184,7 +165,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           );
         }
       } else {
-        await postService.toggleFollow(widget.userId);
+        await postService.followUser(widget.userId);
       }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -275,6 +256,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildProfileHeader(String nickname, String avatar, String bio, String userId, {String background = '', int verified = 0, String verifiedName = ''}) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final bgHeight = (background.isNotEmpty ? 150.0 : 120.0) + statusBarHeight;
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bgCacheWidth = (screenWidth * pixelRatio).toInt();
+    final avatarCacheSize = (72 * pixelRatio).toInt();
 
     return Container(
       color: Colors.white,
@@ -293,6 +278,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   child: Image.network(
                     background,
                     fit: BoxFit.cover,
+                    cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
                       height: bgHeight,
                       width: double.infinity,
@@ -338,6 +324,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
                               errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 36, color: Color(0xFFCCCCCC)),
                             ),
                           )

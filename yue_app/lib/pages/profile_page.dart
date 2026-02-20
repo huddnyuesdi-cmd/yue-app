@@ -238,6 +238,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Widget _buildHeader() {
     final bgHeight = (_communityBackground != null && _communityBackground!.isNotEmpty) ? 150.0 : 120.0;
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bgCacheWidth = (screenWidth * pixelRatio).toInt();
+    final avatarCacheSize = (72 * pixelRatio).toInt();
 
     return Container(
       color: Colors.white,
@@ -256,6 +260,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   child: Image.network(
                     _communityBackground!,
                     fit: BoxFit.cover,
+                    cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
                       height: bgHeight,
                       color: const Color(0xFFF0F0F0),
@@ -283,6 +288,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.person,
                                 size: 36,
@@ -297,6 +304,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   width: 72,
                                   height: 72,
                                   fit: BoxFit.cover,
+                                  cacheWidth: avatarCacheSize,
+                                  cacheHeight: avatarCacheSize,
                                   errorBuilder: (_, __, ___) => const Icon(
                                     Icons.person,
                                     size: 36,

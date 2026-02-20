@@ -263,6 +263,8 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
+                              cacheWidth: 80,
+                              cacheHeight: 80,
                               errorBuilder: (_, __, ___) => Icon(
                                 _getNotificationIcon(notifType),
                                 size: 20,

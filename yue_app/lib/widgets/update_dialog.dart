@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/update_service.dart';
 
@@ -43,6 +44,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
     }
 
     // Android: download and install APK
+    // Request storage permission for older Android versions
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      if (!status.isGranted && !status.isLimited) {
+        if (mounted) {
+          setState(() {
+            _error = '需要存储权限才能下载更新';
+          });
+        }
+        return;
+      }
+    }
+
     setState(() {
       _downloading = true;
       _progress = 0;
