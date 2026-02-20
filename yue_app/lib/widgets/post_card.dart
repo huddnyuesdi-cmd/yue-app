@@ -72,16 +72,6 @@ class PostCard extends StatelessWidget {
                       if (loadingProgress == null) return child;
                       return Container(
                         color: const Color(0xFFF8F8F8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
                       );
                     },
                   ),

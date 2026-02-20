@@ -388,7 +388,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ],
       ),
       body: _isLoading && _post == null
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
+          ? const SizedBox()
           : _error != null && _post == null
               ? Center(child: Text(_error!, style: const TextStyle(color: Color(0xFF999999))))
               : Column(
@@ -502,16 +502,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                               ),
                             ),
                             if (_isCommentsLoading)
-                              const Padding(
-                                padding: EdgeInsets.all(32),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-                                  ),
-                                ),
-                              )
+                              const SizedBox.shrink()
                             else if (_comments.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.all(32),

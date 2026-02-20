@@ -191,9 +191,7 @@ class _NotificationsPageState extends State<NotificationsPage> with SingleTicker
 
   Widget _buildNotificationList(String type) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-      );
+      return const SizedBox.shrink();
     }
 
     final filtered = _filterNotifications(type);

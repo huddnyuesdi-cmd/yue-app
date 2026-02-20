@@ -191,26 +191,7 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
   }
 
   Widget _buildLoadingView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: Color(0xFF999999),
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            '加载中...',
-            style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildErrorView() {
@@ -274,18 +255,6 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
   }
 
   Widget _buildLoadMoreIndicator() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFF999999),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }

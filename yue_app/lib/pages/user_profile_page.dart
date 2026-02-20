@@ -262,12 +262,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   else if (_isLoading)
                     const SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 32),
-                          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-                        ),
-                      ),
+                      child: SizedBox.shrink(),
                     )
                   else
                     const SliverFillRemaining(

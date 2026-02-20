@@ -268,9 +268,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   Widget _buildSearchResults() {
     if (_isLoading && _searchResults.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-      );
+      return const SizedBox.shrink();
     }
 
     if (_searchResults.isEmpty) {
@@ -301,16 +299,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           itemCount: _searchResults.length + (_isLoading ? 1 : 0),
           itemBuilder: (context, index) {
             if (index >= _searchResults.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-                  ),
-                ),
-              );
+              return const SizedBox.shrink();
             }
             return PostCard(post: _searchResults[index]);
           },

@@ -101,16 +101,6 @@ class _EncryptedCachedImageState extends State<EncryptedCachedImage> {
       return SizedBox(
         width: widget.width,
         height: widget.height,
-        child: const Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Color(0xFFCCCCCC),
-            ),
-          ),
-        ),
       );
     }
 

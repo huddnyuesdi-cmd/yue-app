@@ -479,13 +479,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   Widget _buildPostGrid(List<Post> posts, bool isLoading) {
-    if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-        ),
-      );
+    if (isLoading && posts.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     if (posts.isEmpty) {
