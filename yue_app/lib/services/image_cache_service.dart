@@ -124,11 +124,11 @@ class ImageCacheService {
     }
   }
 
-  /// Network-first: try downloading fresh data, save to local, serve from local.
-  /// If network fails, fall back to existing local cache.
+  /// Cache-first: serve from local cache instantly if available,
+  /// otherwise download from network, persist, and return.
   Future<Uint8List?> getOrDownload(String url) async {
-    final downloaded = await download(url);
-    if (downloaded != null) return downloaded;
-    return get(url);
+    final cached = await get(url);
+    if (cached != null) return cached;
+    return download(url);
   }
 }
