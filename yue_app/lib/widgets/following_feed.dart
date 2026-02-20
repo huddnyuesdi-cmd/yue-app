@@ -115,9 +115,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
     }
 
     if (_posts.isEmpty && _isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-      );
+      return const SizedBox.shrink();
     }
 
     if (_posts.isEmpty) {
@@ -139,16 +137,7 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
             itemCount: _posts.length + (_isLoading ? 1 : 0),
             itemBuilder: (context, index) {
               if (index >= _posts.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-                    ),
-                  ),
-                );
+                return const SizedBox.shrink();
               }
               return PostCard(post: _posts[index]);
             },

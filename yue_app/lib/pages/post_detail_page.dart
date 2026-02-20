@@ -3,6 +3,7 @@ import '../models/post_model.dart';
 import '../models/comment_model.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 import '../widgets/verified_badge.dart';
 import 'user_profile_page.dart';
 
@@ -387,7 +388,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ],
       ),
       body: _isLoading && _post == null
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
+          ? const SizedBox()
           : _error != null && _post == null
               ? Center(child: Text(_error!, style: const TextStyle(color: Color(0xFF999999))))
               : Column(
@@ -501,16 +502,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                               ),
                             ),
                             if (_isCommentsLoading)
-                              const Padding(
-                                padding: EdgeInsets.all(32),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF999999)),
-                                  ),
-                                ),
-                              )
+                              const SizedBox.shrink()
                             else if (_comments.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.all(32),
@@ -551,8 +543,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
               setState(() => _currentImageIndex = index);
             },
             itemBuilder: (context, index) {
-              return Image.network(
-                images[index].url,
+              return EncryptedCachedImage(
+                imageUrl: images[index].url,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 cacheWidth: imageCacheWidth,
@@ -830,8 +822,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final cacheSize = (size * MediaQuery.of(context).devicePixelRatio).toInt();
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
-          avatarUrl,
+        child: EncryptedCachedImage(
+          imageUrl: avatarUrl,
           width: size,
           height: size,
           fit: BoxFit.cover,

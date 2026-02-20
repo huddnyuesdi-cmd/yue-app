@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../config/layout_config.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 
@@ -28,11 +32,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Map<String, dynamic> _userInfo = {};
   Map<String, dynamic> _stats = {};
   List<Post> _posts = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   bool _isToggling = false;
   double _followScale = 1.0;
+  PostService? _postService;
 
   @override
   void initState() {
@@ -41,6 +46,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _initData() async {
+    // Pre-cache PostService instance for faster follow toggle
+    PostService.getInstance().then((ps) => _postService = ps);
     // Load follow state from local cache first (instant, no flicker)
     final storage = await StorageService.getInstance();
     final cachedFollow = storage.getFollowStatus(widget.userId);
@@ -141,17 +148,33 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _isToggling = true;
 
     final wasFollowing = _isFollowing;
-    // Optimistic update with scale animation
+    // Optimistic update immediately
     setState(() {
       _isFollowing = !wasFollowing;
-      _followScale = 0.85;
+      _followScale = 0.8;
     });
-    Future.delayed(const Duration(milliseconds: 150), () {
+    // Persist optimistic state locally right away
+    StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (mounted) setState(() => _followScale = 1.08);
+    });
+    Future.delayed(const Duration(milliseconds: 260), () {
       if (mounted) setState(() => _followScale = 1.0);
     });
 
+    // Release button lock after short debounce so user isn't blocked by API latency
+    Future.delayed(const Duration(milliseconds: 30), () {
+      if (mounted) _isFollowLoading = false;
+    });
+
+    // Fire-and-forget API call - don't block UI
+    _performFollowApi(wasFollowing);
+  }
+
+  Future<void> _performFollowApi(bool wasFollowing) async {
     try {
-      final postService = await PostService.getInstance();
+      final postService = _postService ?? await PostService.getInstance();
+      _postService = postService;
       if (wasFollowing) {
         await postService.unfollowUser(widget.userId);
         if (mounted) {
@@ -165,35 +188,32 @@ class _UserProfilePageState extends State<UserProfilePage> {
       } else {
         await postService.followUser(widget.userId);
       }
-      // After successful API call, verify the follow status from server
-      try {
-        final status = await postService.getFollowStatus(widget.userId);
-        if (mounted) {
-          final serverFollowing = _extractFollowStatus(status, _userInfo);
-          if (serverFollowing != _isFollowing) {
-            setState(() => _isFollowing = serverFollowing);
-          }
-        }
-      } catch (_) {
-        // Verification failed, keep optimistic state
-      }
     } catch (e) {
+      // Don't revert on timeout/network errors - keep optimistic state
+      if (e is SocketException || e is TimeoutException) {
+        return;
+      }
+      if (e is DioException && (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError)) {
+        return;
+      }
       final msg = e.toString().replaceFirst('Exception: ', '');
-      // If trying to follow but server says already followed, keep the followed state
+      // If server says already followed/unfollowed, keep current state
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
-        if (mounted) {
-          setState(() => _isFollowing = true);
-        }
+        if (mounted) setState(() => _isFollowing = true);
         return;
       }
-      // If trying to unfollow but server says not following, keep the unfollowed state
       if (wasFollowing && (msg.contains('未关注') || msg.contains('没有关注') || msg.contains('not following'))) {
-        if (mounted) {
-          setState(() => _isFollowing = false);
-        }
+        if (mounted) setState(() => _isFollowing = false);
         return;
       }
-      // Revert on other failures
+      // Don't revert on timeout/network error messages either
+      if (msg.contains('超时') || msg.contains('timeout') || msg.contains('网络') || msg.contains('连接')) {
+        return;
+      }
+      // Revert only on actual server rejection
       if (mounted) {
         setState(() => _isFollowing = wasFollowing);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -202,8 +222,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } finally {
       _isFollowLoading = false;
-      _isToggling = false;
-      // Persist follow state locally
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _isToggling = false;
+      });
       StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
     }
   }
@@ -220,44 +241,47 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
-                return CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
-                    SliverToBoxAdapter(child: _buildStatsRow()),
-                    if (_posts.isNotEmpty)
-                      SliverPadding(
-                        padding: const EdgeInsets.all(8),
-                        sliver: SliverMasonryGrid.count(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childCount: _posts.length,
-                          itemBuilder: (context, index) => PostCard(post: _posts[index]),
-                        ),
-                      )
-                    else
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
-                              SizedBox(height: 12),
-                              Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
-                            ],
-                          ),
+      body: LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = LayoutConfig.getGridColumnCount(constraints.maxWidth);
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
+                  SliverToBoxAdapter(child: _buildStatsRow()),
+                  if (_posts.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.all(8),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childCount: _posts.length,
+                        itemBuilder: (context, index) => PostCard(post: _posts[index]),
+                      ),
+                    )
+                  else if (_isLoading)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: SizedBox.shrink(),
+                    )
+                  else
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFDDDDDD)),
+                            SizedBox(height: 12),
+                            Text('暂无笔记', style: TextStyle(fontSize: 14, color: Color(0xFF999999))),
+                          ],
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
+          ),
     );
   }
 
@@ -283,8 +307,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 SizedBox(
                   height: bgHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    background,
+                  child: EncryptedCachedImage(
+                    imageUrl: background,
                     fit: BoxFit.cover,
                     cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
@@ -327,8 +351,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     backgroundColor: const Color(0xFFF5F5F5),
                     child: avatar.isNotEmpty
                         ? ClipOval(
-                            child: Image.network(
-                              avatar,
+                            child: EncryptedCachedImage(
+                              imageUrl: avatar,
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
@@ -349,20 +373,26 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   onTap: _toggleFollow,
                   child: AnimatedScale(
                     scale: _followScale,
-                    duration: const Duration(milliseconds: 150),
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutBack,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                       decoration: BoxDecoration(
                         color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        _isFollowing ? '已关注' : '+ 关注',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _isFollowing ? const Color(0xFF999999) : Colors.white,
-                          fontWeight: FontWeight.w600,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          _isFollowing ? '已关注' : '+ 关注',
+                          key: ValueKey(_isFollowing),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isFollowing ? const Color(0xFF999999) : Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -444,14 +474,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem('$followingCount', '关注'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followerCount', '粉丝'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$likeCount', '获赞与收藏'),
         ],
       ),
@@ -459,18 +487,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildStatItem(String count, String label) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            count,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          ),
+        ],
+      ),
     );
   }
 }

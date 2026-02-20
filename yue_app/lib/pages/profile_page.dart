@@ -6,6 +6,7 @@ import '../models/post_model.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/encrypted_cached_image.dart';
 import '../widgets/post_card.dart';
 import '../widgets/verified_badge.dart';
 import 'edit_profile_page.dart';
@@ -259,8 +260,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 SizedBox(
                   height: bgHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    _communityBackground!,
+                  child: EncryptedCachedImage(
+                    imageUrl: _communityBackground!,
                     fit: BoxFit.cover,
                     cacheWidth: bgCacheWidth,
                     errorBuilder: (_, __, ___) => Container(
@@ -285,8 +286,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     backgroundColor: const Color(0xFFF5F5F5),
                     child: (_communityAvatar != null && _communityAvatar!.isNotEmpty)
                         ? ClipOval(
-                            child: Image.network(
-                              _communityAvatar!,
+                            child: EncryptedCachedImage(
+                              imageUrl: _communityAvatar!,
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
@@ -301,8 +302,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           )
                         : (_user?.avatar != null && _user!.avatar!.isNotEmpty)
                             ? ClipOval(
-                                child: Image.network(
-                                  _user!.avatar!,
+                                child: EncryptedCachedImage(
+                                  imageUrl: _user!.avatar!,
                                   width: 72,
                                   height: 72,
                                   fit: BoxFit.cover,
@@ -443,56 +444,43 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem('$followingCount', '关注'),
-          _buildDivider(),
           _buildStatItem('$followerCount', '粉丝'),
-          _buildDivider(),
           _buildStatItem('$likeCount', '获赞与收藏'),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return Container(
-      width: 1,
-      height: 24,
-      color: const Color(0xFFEEEEEE),
-    );
-  }
-
   Widget _buildStatItem(String count, String label) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            count,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF333333),
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPostGrid(List<Post> posts, bool isLoading) {
-    if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2),
-        ),
-      );
+    if (isLoading && posts.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     if (posts.isEmpty) {

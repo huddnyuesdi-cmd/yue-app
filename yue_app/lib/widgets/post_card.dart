@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../pages/post_detail_page.dart';
+import '../widgets/encrypted_cached_image.dart';
 import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
@@ -56,8 +57,8 @@ class PostCard extends StatelessWidget {
                 constraints: BoxConstraints(maxHeight: constraints.maxWidth * _kMaxHeightToWidthRatio),
                 child: AspectRatio(
                   aspectRatio: _getImageAspectRatio(),
-                  child: Image.network(
-                    post.coverImage!,
+                  child: EncryptedCachedImage(
+                    imageUrl: post.coverImage!,
                     fit: BoxFit.cover,
                     cacheWidth: cardCacheWidth,
                     errorBuilder: (context, error, stackTrace) => Container(
@@ -71,16 +72,6 @@ class PostCard extends StatelessWidget {
                       if (loadingProgress == null) return child;
                       return Container(
                         color: const Color(0xFFF8F8F8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
                       );
                     },
                   ),
@@ -164,8 +155,8 @@ class PostCard extends StatelessWidget {
     final avatarUrl = post.user.avatar;
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
-          avatarUrl,
+        child: EncryptedCachedImage(
+          imageUrl: avatarUrl,
           width: 20,
           height: 20,
           fit: BoxFit.cover,
