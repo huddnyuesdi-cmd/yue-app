@@ -141,12 +141,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _isToggling = true;
 
     final wasFollowing = _isFollowing;
-    // Optimistic update with scale animation
+    // Optimistic update immediately
     setState(() {
       _isFollowing = !wasFollowing;
-      _followScale = 0.85;
+      _followScale = 0.8;
     });
-    Future.delayed(const Duration(milliseconds: 150), () {
+    // Persist optimistic state locally right away
+    StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (mounted) setState(() => _followScale = 1.08);
+    });
+    Future.delayed(const Duration(milliseconds: 260), () {
       if (mounted) setState(() => _followScale = 1.0);
     });
 
@@ -165,28 +170,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       } else {
         await postService.followUser(widget.userId);
       }
-      // After successful API call, verify the follow status from server
-      try {
-        final status = await postService.getFollowStatus(widget.userId);
-        if (mounted) {
-          final serverFollowing = _extractFollowStatus(status, _userInfo);
-          if (serverFollowing != _isFollowing) {
-            setState(() => _isFollowing = serverFollowing);
-          }
-        }
-      } catch (_) {
-        // Verification failed, keep optimistic state
-      }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
-      // If trying to follow but server says already followed, keep the followed state
       if (!wasFollowing && (msg.contains('已关注') || msg.contains('已经关注') || msg.contains('already'))) {
         if (mounted) {
           setState(() => _isFollowing = true);
         }
         return;
       }
-      // If trying to unfollow but server says not following, keep the unfollowed state
       if (wasFollowing && (msg.contains('未关注') || msg.contains('没有关注') || msg.contains('not following'))) {
         if (mounted) {
           setState(() => _isFollowing = false);
@@ -202,8 +193,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } finally {
       _isFollowLoading = false;
-      _isToggling = false;
-      // Persist follow state locally
+      // Keep _isToggling true briefly to prevent profile reload from overwriting
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _isToggling = false;
+      });
       StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
     }
   }
@@ -349,20 +342,26 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   onTap: _toggleFollow,
                   child: AnimatedScale(
                     scale: _followScale,
-                    duration: const Duration(milliseconds: 150),
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutBack,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                       decoration: BoxDecoration(
                         color: _isFollowing ? const Color(0xFFF5F5F5) : const Color(0xFFFF2442),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        _isFollowing ? '已关注' : '+ 关注',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _isFollowing ? const Color(0xFF999999) : Colors.white,
-                          fontWeight: FontWeight.w600,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          _isFollowing ? '已关注' : '+ 关注',
+                          key: ValueKey(_isFollowing),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isFollowing ? const Color(0xFF999999) : Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -444,14 +443,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem('$followingCount', '关注'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$followerCount', '粉丝'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
           _buildStatItem('$likeCount', '获赞与收藏'),
         ],
       ),
@@ -459,18 +456,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildStatItem(String count, String label) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            count,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          ),
+        ],
+      ),
     );
   }
 }
