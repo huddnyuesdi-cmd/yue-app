@@ -15,7 +15,7 @@ class PostDetailPage extends StatefulWidget {
   State<PostDetailPage> createState() => _PostDetailPageState();
 }
 
-class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStateMixin {
+class _PostDetailPageState extends State<PostDetailPage> {
   static const _contentTruncateLength = 200;
   Post? _post;
   List<Comment> _comments = [];
@@ -31,37 +31,12 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
   final Set<int> _loadingReplies = {};
   bool _isLikeLoading = false;
   bool _isCollectLoading = false;
-
-  late AnimationController _likeAnimController;
-  late Animation<double> _likeScaleAnim;
-  late AnimationController _collectAnimController;
-  late Animation<double> _collectScaleAnim;
+  double _likeScale = 1.0;
+  double _collectScale = 1.0;
 
   @override
   void initState() {
     super.initState();
-    _likeAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _likeScaleAnim = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 1.3, end: 0.9), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.1), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 25),
-    ]).animate(CurvedAnimation(parent: _likeAnimController, curve: Curves.easeOut));
-
-    _collectAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _collectScaleAnim = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 1.3, end: 0.9), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.1), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 25),
-    ]).animate(CurvedAnimation(parent: _collectAnimController, curve: Curves.easeOut));
-
     _post = widget.initialPost;
     _loadCurrentUser();
     _loadPostDetail();
@@ -72,8 +47,6 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
   void dispose() {
     _commentController.dispose();
     _commentFocusNode.dispose();
-    _likeAnimController.dispose();
-    _collectAnimController.dispose();
     super.dispose();
   }
 
@@ -132,8 +105,11 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
         image: _post!.image, images: _post!.images, tags: _post!.tags,
         liked: newLiked, collected: _post!.collected, user: _post!.user,
       );
+      _likeScale = 1.3;
     });
-    _likeAnimController.forward(from: 0);
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _likeScale = 1.0);
+    });
 
     try {
       final postService = await PostService.getInstance();
@@ -180,8 +156,11 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
         image: _post!.image, images: _post!.images, tags: _post!.tags,
         liked: _post!.liked, collected: newCollected, user: _post!.user,
       );
+      _collectScale = 1.3;
     });
-    _collectAnimController.forward(from: 0);
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _collectScale = 1.0);
+    });
 
     try {
       final postService = await PostService.getInstance();
@@ -761,19 +740,19 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
             ),
           ),
           const SizedBox(width: 8),
-          _buildAnimatedActionButton(
+          _buildActionButton(
             icon: _post?.liked == true ? Icons.favorite : Icons.favorite_border,
             label: '${_post?.likeCount ?? 0}',
             color: _post?.liked == true ? const Color(0xFFFF2442) : const Color(0xFF999999),
             onTap: _handleLike,
-            animation: _likeScaleAnim,
+            scale: _likeScale,
           ),
-          _buildAnimatedActionButton(
+          _buildActionButton(
             icon: _post?.collected == true ? Icons.star : Icons.star_border,
             label: '${_post?.collectCount ?? 0}',
             color: _post?.collected == true ? const Color(0xFFFFB800) : const Color(0xFF999999),
             onTap: _handleCollect,
-            animation: _collectScaleAnim,
+            scale: _collectScale,
           ),
           _buildActionButton(
             icon: Icons.chat_bubble_outline,
@@ -786,25 +765,21 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
     );
   }
 
-  Widget _buildAnimatedActionButton({
+  Widget _buildActionButton({
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
-    required Animation<double> animation,
+    double scale = 1.0,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: animation.value,
-              child: child,
-            );
-          },
+        child: AnimatedScale(
+          scale: scale,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -812,27 +787,6 @@ class _PostDetailPageState extends State<PostDetailPage> with TickerProviderStat
               Text(label, style: TextStyle(fontSize: 10, color: color)),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            Text(label, style: TextStyle(fontSize: 10, color: color)),
-          ],
         ),
       ),
     );
