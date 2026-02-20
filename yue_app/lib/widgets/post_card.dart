@@ -4,6 +4,9 @@ import '../pages/post_detail_page.dart';
 import 'verified_badge.dart';
 
 class PostCard extends StatelessWidget {
+  // Maximum image height-to-width ratio to prevent excessively tall images in waterfall grid
+  static const double _kMaxHeightToWidthRatio = 1.6;
+
   final Post post;
 
   const PostCard({super.key, required this.post});
@@ -50,7 +53,7 @@ class PostCard extends StatelessWidget {
                 topRight: Radius.circular(8),
               ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: constraints.maxWidth * 1.6),
+                constraints: BoxConstraints(maxHeight: constraints.maxWidth * _kMaxHeightToWidthRatio),
                 child: AspectRatio(
                   aspectRatio: _getImageAspectRatio(),
                   child: Image.network(

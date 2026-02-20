@@ -192,7 +192,9 @@ class _SlideCaptchaDialogState extends State<SlideCaptchaDialog> {
     return LayoutBuilder(
       builder: (context, constraints) {
     // Scale to fit actual available width from layout constraints
-    final maxWidth = constraints.maxWidth;
+    final maxWidth = constraints.hasBoundedWidth
+        ? constraints.maxWidth
+        : (captcha.imageWidth ?? 300).toDouble();
     final scale = maxWidth < imgWidth ? maxWidth / imgWidth : 1.0;
     final displayWidth = imgWidth * scale;
     final displayHeight = imgHeight * scale;
