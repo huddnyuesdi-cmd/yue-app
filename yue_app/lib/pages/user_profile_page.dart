@@ -195,7 +195,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       _isFollowLoading = false;
       // Keep _isToggling true briefly to prevent profile reload from overwriting
       Future.delayed(const Duration(milliseconds: 500), () {
-        _isToggling = false;
+        if (mounted) _isToggling = false;
       });
       StorageService.getInstance().then((s) => s.setFollowStatus(widget.userId, _isFollowing));
     }
