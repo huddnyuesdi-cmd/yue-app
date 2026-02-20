@@ -90,7 +90,9 @@ class _FollowingFeedState extends State<FollowingFeed> with AutomaticKeepAliveCl
       final response = await postService.getFollowingPosts(page: _page, limit: 20);
       if (mounted) {
         setState(() {
-          _posts.addAll(response.posts);
+          final existingIds = _posts.map((p) => p.id).toSet();
+          final newPosts = response.posts.where((p) => !existingIds.contains(p.id)).toList();
+          _posts.addAll(newPosts);
           _page++;
           _hasMore = response.pagination != null &&
               response.pagination!.page < response.pagination!.pages;

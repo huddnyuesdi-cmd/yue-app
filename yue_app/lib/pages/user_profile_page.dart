@@ -66,10 +66,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _loadFollowStatus() async {
     try {
-      final uid = int.tryParse(widget.userId);
-      if (uid == null) return;
       final postService = await PostService.getInstance();
-      final status = await postService.getFollowStatus(uid);
+      final status = await postService.getFollowStatus(widget.userId);
       if (mounted && status.isNotEmpty) {
         final following = status['is_following'] as bool? ?? status['following'] as bool? ?? false;
         setState(() => _isFollowing = following);
@@ -90,11 +88,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
         await postService.toggleFollow(widget.userId);
       }
     } catch (e) {
-      // Revert on failure
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      // If trying to follow but server says already followed, keep the followed state
+      if (!wasFollowing && (msg.contains('已关注') || msg.contains('already'))) {
+        if (mounted) {
+          setState(() => _isFollowing = true);
+        }
+        return;
+      }
+      // Revert on other failures
       if (mounted) {
         setState(() => _isFollowing = wasFollowing);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+          SnackBar(content: Text(msg)),
         );
       }
     }
@@ -111,7 +117,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final verifiedName = _userInfo['verified_name'] as String? ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF999999), strokeWidth: 2))
           : LayoutBuilder(

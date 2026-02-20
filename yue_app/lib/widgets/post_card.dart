@@ -42,34 +42,37 @@ class PostCard extends StatelessWidget {
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
-              child: AspectRatio(
-                aspectRatio: _getImageAspectRatio(),
-                child: Image.network(
-                  post.coverImage!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: const Color(0xFFF5F5F5),
-                    child: const Center(
-                      child: Icon(Icons.image_outlined,
-                          size: 32, color: Color(0xFFDDDDDD)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: AspectRatio(
+                  aspectRatio: _getImageAspectRatio(),
+                  child: Image.network(
+                    post.coverImage!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xFFF5F5F5),
+                      child: const Center(
+                        child: Icon(Icons.image_outlined,
+                            size: 32, color: Color(0xFFDDDDDD)),
+                      ),
                     ),
-                  ),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: const Color(0xFFF8F8F8),
-                      child: Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: const Color(0xFFF8F8F8),
+                        child: Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: const Color(0xFFCCCCCC).withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

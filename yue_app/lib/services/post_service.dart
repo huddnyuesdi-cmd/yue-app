@@ -629,7 +629,7 @@ class PostService {
   }
 
   /// Get follow status for a user.
-  Future<Map<String, dynamic>> getFollowStatus(int userId) async {
+  Future<Map<String, dynamic>> getFollowStatus(dynamic userId) async {
     final token = _storage.getCommunityToken();
     if (token == null || token.isEmpty) return {};
 

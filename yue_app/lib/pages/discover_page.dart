@@ -105,7 +105,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
       );
       if (mounted) {
         setState(() {
-          _searchResults.addAll(response.posts);
+          final existingIds = _searchResults.map((p) => p.id).toSet();
+          final newPosts = response.posts.where((p) => !existingIds.contains(p.id)).toList();
+          _searchResults.addAll(newPosts);
           _page++;
           _hasMore = response.pagination != null &&
               response.pagination!.page < response.pagination!.pages;
