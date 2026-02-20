@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
         if (mounted) setState(() => _currentIndex = index);
       },
       child: SizedBox(
-        width: iconSize * 2.4,
+        width: iconSize * 2.4, // Sized to fit icon + label with comfortable tap target
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
