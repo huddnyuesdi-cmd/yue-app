@@ -98,7 +98,9 @@ class _WaterfallFeedState extends State<WaterfallFeed> with AutomaticKeepAliveCl
       );
       if (mounted) {
         setState(() {
-          _posts.addAll(response.posts);
+          final existingIds = _posts.map((p) => p.id).toSet();
+          final newPosts = response.posts.where((p) => !existingIds.contains(p.id)).toList();
+          _posts.addAll(newPosts);
           _page++;
           _hasMore = response.pagination != null &&
               response.pagination!.page < response.pagination!.pages;

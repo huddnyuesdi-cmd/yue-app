@@ -66,10 +66,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _loadFollowStatus() async {
     try {
-      final uid = int.tryParse(widget.userId);
-      if (uid == null) return;
       final postService = await PostService.getInstance();
-      final status = await postService.getFollowStatus(uid);
+      final status = await postService.getFollowStatus(widget.userId);
       if (mounted && status.isNotEmpty) {
         final following = status['is_following'] as bool? ?? status['following'] as bool? ?? false;
         setState(() => _isFollowing = following);
@@ -121,6 +119,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   slivers: [
                     SliverToBoxAdapter(child: _buildProfileHeader(nickname, avatar, bio, userId, background: background, verified: verified, verifiedName: verifiedName)),
                     SliverToBoxAdapter(child: _buildStatsRow()),
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
                     if (_posts.isNotEmpty)
                       SliverPadding(
                         padding: const EdgeInsets.all(8),
@@ -255,7 +254,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 44),
           // User info
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -264,7 +263,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     Flexible(
                       child: Text(
                         nickname,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -273,23 +272,31 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ],
                 ),
                 if (verified > 0 && verifiedName.isNotEmpty) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     verifiedName,
                     style: const TextStyle(fontSize: 12, color: Color(0xFF1D9BF0)),
                   ),
                 ] else if (userId.isNotEmpty) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     'ID: $userId',
                     style: const TextStyle(fontSize: 12, color: Color(0xFFBBBBBB)),
                   ),
                 ],
                 if (bio.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    bio,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.4),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F8F8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      bio,
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.5),
+                    ),
                   ),
                 ],
               ],
@@ -323,34 +330,57 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final likeCount = svLikesAndCollects > 0 ? svLikesAndCollects : svLikeCount > 0 ? svLikeCount : svLikesCount > 0 ? svLikesCount : svTotalLikes;
 
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem('$followingCount', '关注'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
-          _buildStatItem('$followerCount', '粉丝'),
-          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
-          _buildStatItem('$likeCount', '获赞与收藏'),
+          _buildStatItem(_formatStatCount(followingCount), '关注'),
+          Container(width: 0.5, height: 28, color: const Color(0xFFE8E8E8)),
+          _buildStatItem(_formatStatCount(followerCount), '粉丝'),
+          Container(width: 0.5, height: 28, color: const Color(0xFFE8E8E8)),
+          _buildStatItem(_formatStatCount(likeCount), '获赞与收藏'),
         ],
       ),
     );
   }
 
+  String _formatStatCount(int count) {
+    if (count >= 10000) {
+      return '${(count / 10000).toStringAsFixed(1)}w';
+    }
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}k';
+    }
+    return '$count';
+  }
+
   Widget _buildStatItem(String count, String label) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            count,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+          ),
+        ],
+      ),
     );
   }
 }
