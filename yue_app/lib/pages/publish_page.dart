@@ -21,7 +21,6 @@ class _PublishPageState extends State<PublishPage> {
   File? _selectedVideo;
   bool _isPublishing = false;
   bool _isUploading = false;
-  int _postType = 1; // 1=图文, 2=视频
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -106,17 +105,6 @@ class _PublishPageState extends State<PublishPage> {
     });
   }
 
-  void _switchPostType(int type) {
-    setState(() {
-      _postType = type;
-      if (type == 1) {
-        _selectedVideo = null;
-      } else {
-        _selectedImages.clear();
-      }
-    });
-  }
-
   Future<void> _publish() async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
@@ -138,8 +126,11 @@ class _PublishPageState extends State<PublishPage> {
       List<String>? imageUrls;
       String? videoUrl;
 
+      // Auto-determine post type: video present → type 2, otherwise → type 1
+      final postType = _selectedVideo != null ? 2 : 1;
+
       // Upload images
-      if (_postType == 1 && _selectedImages.isNotEmpty) {
+      if (_selectedImages.isNotEmpty) {
         imageUrls = [];
         for (final imageFile in _selectedImages) {
           final url = await postService.uploadImage(imageFile.path);
@@ -148,7 +139,7 @@ class _PublishPageState extends State<PublishPage> {
       }
 
       // Upload video
-      if (_postType == 2 && _selectedVideo != null) {
+      if (_selectedVideo != null) {
         videoUrl = await postService.uploadVideo(_selectedVideo!.path);
       }
 
@@ -162,7 +153,7 @@ class _PublishPageState extends State<PublishPage> {
         tags: _tags,
         imageUrls: imageUrls,
         video: videoUrl,
-        type: _postType,
+        type: postType,
       );
 
       if (!mounted) return;
@@ -219,20 +210,20 @@ class _PublishPageState extends State<PublishPage> {
           ),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: LayoutConfig.maxFormWidth),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = LayoutConfig.getMaxFormWidth(constraints.maxWidth);
+          final mediaGridColumns = LayoutConfig.getMediaGridColumnCount(constraints.maxWidth);
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
         child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Post type toggle
-            _buildPostTypeToggle(),
-            const SizedBox(height: 16),
-            // Media section
-            if (_postType == 1) _buildImageSection(),
-            if (_postType == 2) _buildVideoSection(),
+            // Unified media section
+            _buildMediaSection(mediaGridColumns),
             const SizedBox(height: 16),
             // Title input
             Container(
@@ -384,165 +375,58 @@ class _PublishPageState extends State<PublishPage> {
         ),
         ),
         ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildPostTypeToggle() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F8),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _switchPostType(1),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: _postType == 1 ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: _postType == 1
-                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image_rounded,
-                        size: 18,
-                        color: _postType == 1 ? const Color(0xFFFF2442) : const Color(0xFF999999)),
-                    const SizedBox(width: 6),
-                    Text(
-                      '图文',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: _postType == 1 ? FontWeight.w600 : FontWeight.normal,
-                        color: _postType == 1 ? const Color(0xFF333333) : const Color(0xFF999999),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _switchPostType(2),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: _postType == 2 ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: _postType == 2
-                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.videocam_rounded,
-                        size: 18,
-                        color: _postType == 2 ? const Color(0xFFFF2442) : const Color(0xFF999999)),
-                    const SizedBox(width: 6),
-                    Text(
-                      '视频',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: _postType == 2 ? FontWeight.w600 : FontWeight.normal,
-                        color: _postType == 2 ? const Color(0xFF333333) : const Color(0xFF999999),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildMediaSection(int gridColumns) {
+    final totalMedia = _selectedImages.length + (_selectedVideo != null ? 1 : 0);
+    final canAddImage = _selectedImages.length < 9;
+    final canAddVideo = _selectedVideo == null;
+    final showAddButton = canAddImage || canAddVideo;
 
-  Widget _buildImageSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '添加图片',
+          '添加图片/视频',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
         ),
         const SizedBox(height: 10),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: gridColumns,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
           ),
-          itemCount: _selectedImages.length + (_selectedImages.length < 9 ? 1 : 0),
+          itemCount: totalMedia + (showAddButton ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index == _selectedImages.length) {
-              // Add button
-              return GestureDetector(
-                onTap: _pickImages,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_photo_alternate_outlined, size: 32, color: Color(0xFFBBBBBB)),
-                      SizedBox(height: 4),
-                      Text('添加图片', style: TextStyle(fontSize: 11, color: Color(0xFFBBBBBB))),
-                    ],
-                  ),
-                ),
-              );
+            // Video item (shown first if present)
+            if (_selectedVideo != null && index == 0) {
+              return _buildVideoThumbnail();
             }
+
+            // Offset index for images when video is present
+            final imageIndex = _selectedVideo != null ? index - 1 : index;
+
+            // Add button
+            if (imageIndex == _selectedImages.length) {
+              return _buildAddMediaButton();
+            }
+
             // Image preview
-            return Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    _selectedImages[index],
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => _removeImage(index),
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.close, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            );
+            return _buildImageThumbnail(imageIndex);
           },
         ),
-        if (_selectedImages.isNotEmpty)
+        if (totalMedia > 0)
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              '${_selectedImages.length}/9',
+              '${_selectedImages.length}/9 图片${_selectedVideo != null ? '  ·  1 视频' : ''}',
               style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
             ),
           ),
@@ -550,89 +434,139 @@ class _PublishPageState extends State<PublishPage> {
     );
   }
 
-  Widget _buildVideoSection() {
-    if (_selectedVideo != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '已选视频',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-          ),
-          const SizedBox(height: 10),
-          Stack(
-            children: [
-              Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.videocam_rounded, size: 48, color: Colors.white70),
-                      SizedBox(height: 8),
-                      Text('视频已选择', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: _removeVideo,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.close, size: 16, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildVideoThumbnail() {
+    return Stack(
       children: [
-        const Text(
-          '添加视频',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-        ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _pickVideo,
-          child: Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F7F8),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-            ),
-            child: const Column(
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.video_call_rounded, size: 40, color: Color(0xFFBBBBBB)),
-                SizedBox(height: 8),
-                Text('点击选择视频', style: TextStyle(fontSize: 14, color: Color(0xFFBBBBBB))),
+                Icon(Icons.videocam_rounded, size: 32, color: Colors.white70),
                 SizedBox(height: 4),
-                Text('支持mp4、mov等格式', style: TextStyle(fontSize: 12, color: Color(0xFFCCCCCC))),
+                Text('视频', style: TextStyle(color: Colors.white70, fontSize: 11)),
               ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: _removeVideo,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildImageThumbnail(int index) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            _selectedImages[index],
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: () => _removeImage(index),
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddMediaButton() {
+    return GestureDetector(
+      onTap: _showMediaPicker,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F7F8),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_rounded, size: 32, color: Color(0xFFBBBBBB)),
+            SizedBox(height: 4),
+            Text('添加', style: TextStyle(fontSize: 11, color: Color(0xFFBBBBBB))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMediaPicker() {
+    final canAddImage = _selectedImages.length < 9;
+    final canAddVideo = _selectedVideo == null;
+
+    if (canAddImage && canAddVideo) {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.image_rounded, color: Color(0xFFFF2442)),
+                title: const Text('添加图片'),
+                subtitle: Text('还可添加 ${9 - _selectedImages.length} 张'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImages();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam_rounded, color: Color(0xFFFF2442)),
+                title: const Text('添加视频'),
+                subtitle: const Text('支持mp4、mov等格式'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickVideo();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    } else if (canAddImage) {
+      _pickImages();
+    } else if (canAddVideo) {
+      _pickVideo();
+    }
   }
 }
