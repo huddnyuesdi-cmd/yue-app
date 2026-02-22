@@ -40,13 +40,20 @@ class YueMApp extends StatelessWidget {
   }
 }
 
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  late final Future<AuthService> _authFuture = AuthService.getInstance();
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<AuthService>(
-      future: AuthService.getInstance(),
+      future: _authFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Scaffold(
