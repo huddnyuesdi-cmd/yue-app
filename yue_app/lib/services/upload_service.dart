@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../config/api_config.dart';
+import 'log_service.dart';
 import 'storage_service.dart';
 
 /// Configuration returned by the chunk upload config endpoint.
@@ -80,6 +82,7 @@ class VideoUploadDraft {
 class UploadService {
   late final Dio _dio;
   late final StorageService _storage;
+  late final LogService _log;
 
   static UploadService? _instance;
 
@@ -89,6 +92,7 @@ class UploadService {
     if (_instance == null) {
       _instance = UploadService._();
       _instance!._storage = await StorageService.getInstance();
+      _instance!._log = await LogService.getInstance();
       _instance!._dio = Dio(BaseOptions(
         baseUrl: ApiConfig.communityBaseUrl,
         connectTimeout: const Duration(seconds: 30),
@@ -113,31 +117,42 @@ class UploadService {
 
     final file = File(filePath);
     final fileName = file.path.split('/').last;
+    await _log.i('Upload', 'uploadImage: file=$fileName');
+
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
 
-    final response = await _dio.post(
-      '/api/upload/single',
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-    );
+    try {
+      final response = await _dio.post(
+        '/api/upload/single',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
 
-    final data = response.data as Map<String, dynamic>;
-    if (data['code'] != 200) {
-      throw Exception(data['message'] as String? ?? '图片上传失败');
-    }
+      final data = response.data as Map<String, dynamic>;
+      if (data['code'] != 200) {
+        await _log.e('Upload', 'uploadImage FAILED: response=$data');
+        throw Exception(data['message'] as String? ?? '图片上传失败');
+      }
 
-    final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
-    if (url == null || url.isEmpty) {
-      throw Exception('图片上传失败：未返回URL');
+      final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
+      if (url == null || url.isEmpty) {
+        await _log.e('Upload', 'uploadImage: no URL in response: $data');
+        throw Exception('图片上传失败：未返回URL');
+      }
+      await _log.i('Upload', 'uploadImage OK: url=$url');
+      return url;
+    } on DioException catch (e, st) {
+      await _log.e('Upload', 'uploadImage DioException: '
+          'status=${e.response?.statusCode}, responseData=${e.response?.data}', e, st);
+      rethrow;
     }
-    return url;
   }
 
   /// Upload multiple images.
@@ -195,51 +210,75 @@ class UploadService {
 
     final file = File(filePath);
     final fileName = file.path.split('/').last;
+    final fileSize = await file.length();
+    await _log.i('Upload', 'uploadVideo: file=$fileName, size=$fileSize');
+
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
 
-    final response = await _dio.post(
-      '/api/upload/video',
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
-        },
-        sendTimeout: const Duration(minutes: 5),
-        receiveTimeout: const Duration(minutes: 5),
-      ),
-    );
+    try {
+      final response = await _dio.post(
+        '/api/upload/video',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+          sendTimeout: const Duration(minutes: 5),
+          receiveTimeout: const Duration(minutes: 5),
+        ),
+      );
 
-    final data = response.data as Map<String, dynamic>;
-    if (data['code'] != 200) {
-      throw Exception(data['message'] as String? ?? '视频上传失败');
-    }
+      final data = response.data as Map<String, dynamic>;
+      if (data['code'] != 200) {
+        await _log.e('Upload', 'uploadVideo FAILED: response=$data');
+        throw Exception(data['message'] as String? ?? '视频上传失败');
+      }
 
-    final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
-    if (url == null || url.isEmpty) {
-      throw Exception('视频上传失败：未返回URL');
+      final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
+      if (url == null || url.isEmpty) {
+        await _log.e('Upload', 'uploadVideo: no URL in response: $data');
+        throw Exception('视频上传失败：未返回URL');
+      }
+      await _log.i('Upload', 'uploadVideo OK: url=$url');
+      return url;
+    } on DioException catch (e, st) {
+      await _log.e('Upload', 'uploadVideo DioException: '
+          'status=${e.response?.statusCode}, responseData=${e.response?.data}', e, st);
+      rethrow;
     }
-    return url;
   }
 
   /// Get chunk upload configuration from the server.
   Future<ChunkUploadConfig> getChunkConfig() async {
     final token = _getToken();
 
-    final response = await _dio.get(
-      '/api/upload/chunk/config',
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
+    await _log.d('Upload', 'getChunkConfig: fetching config...');
 
-    final data = response.data as Map<String, dynamic>;
-    if (data['code'] != 200) {
-      throw Exception(data['message'] as String? ?? '获取分片配置失败');
+    try {
+      final response = await _dio.get(
+        '/api/upload/chunk/config',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      if (data['code'] != 200) {
+        await _log.e('Upload', 'getChunkConfig FAILED: response=$data');
+        throw Exception(data['message'] as String? ?? '获取分片配置失败');
+      }
+
+      final config = ChunkUploadConfig.fromJson(
+          data['data'] as Map<String, dynamic>? ?? {});
+      await _log.i('Upload', 'getChunkConfig OK: chunkSize=${config.chunkSize}, '
+          'maxFileSize=${config.maxFileSize}');
+      return config;
+    } on DioException catch (e, st) {
+      await _log.e('Upload', 'getChunkConfig DioException: '
+          'status=${e.response?.statusCode}, responseData=${e.response?.data}', e, st);
+      rethrow;
     }
-
-    return ChunkUploadConfig.fromJson(
-        data['data'] as Map<String, dynamic>? ?? {});
   }
 
   /// Verify whether a chunk has already been uploaded (supports resumable upload).
@@ -278,29 +317,53 @@ class UploadService {
   }) async {
     final token = _getToken();
 
+    final chunkFile = File(chunkFilePath);
+    final chunkFileSize = await chunkFile.length();
+    await _log.i('Upload', 'uploadChunk: chunk=$chunkNumber/$totalChunks, '
+        'file=$filename, chunkSize=$chunkFileSize, identifier=$identifier');
+
     final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(chunkFilePath),
+      'file': await MultipartFile.fromFile(
+        chunkFilePath,
+        filename: filename,
+      ),
       'identifier': identifier,
       'chunkNumber': chunkNumber.toString(),
       'totalChunks': totalChunks.toString(),
       'filename': filename,
     });
 
-    final response = await _dio.post(
-      '/api/upload/chunk',
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
-        },
-        sendTimeout: const Duration(minutes: 2),
-        receiveTimeout: const Duration(minutes: 2),
-      ),
-    );
+    try {
+      final response = await _dio.post(
+        '/api/upload/chunk',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
+        ),
+      );
 
-    final data = response.data as Map<String, dynamic>;
-    return data['code'] == 200;
+      final data = response.data as Map<String, dynamic>;
+      final success = data['code'] == 200;
+      if (!success) {
+        await _log.e('Upload', 'uploadChunk FAILED: chunk=$chunkNumber/$totalChunks, '
+            'response=$data');
+      } else {
+        await _log.i('Upload', 'uploadChunk OK: chunk=$chunkNumber/$totalChunks');
+      }
+      return success;
+    } on DioException catch (e, st) {
+      await _log.e('Upload', 'uploadChunk DioException: chunk=$chunkNumber/$totalChunks, '
+          'status=${e.response?.statusCode}, responseData=${e.response?.data}', e, st);
+      rethrow;
+    } catch (e, st) {
+      await _log.e('Upload', 'uploadChunk error: chunk=$chunkNumber/$totalChunks', e, st);
+      rethrow;
+    }
   }
 
   /// Merge all uploaded chunks into the final video file.
@@ -312,32 +375,43 @@ class UploadService {
   }) async {
     final token = _getToken();
 
-    final response = await _dio.post(
-      '/api/upload/chunk/merge',
-      data: {
-        'identifier': identifier,
-        'totalChunks': totalChunks.toString(),
-        'filename': filename,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
+    await _log.i('Upload', 'mergeChunks: identifier=$identifier, totalChunks=$totalChunks, filename=$filename');
+
+    try {
+      final response = await _dio.post(
+        '/api/upload/chunk/merge',
+        data: {
+          'identifier': identifier,
+          'totalChunks': totalChunks.toString(),
+          'filename': filename,
         },
-        receiveTimeout: const Duration(minutes: 5),
-      ),
-    );
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          receiveTimeout: const Duration(minutes: 5),
+        ),
+      );
 
-    final data = response.data as Map<String, dynamic>;
-    if (data['code'] != 200) {
-      throw Exception(data['message'] as String? ?? '合并分片失败');
-    }
+      final data = response.data as Map<String, dynamic>;
+      if (data['code'] != 200) {
+        await _log.e('Upload', 'mergeChunks FAILED: response=$data');
+        throw Exception(data['message'] as String? ?? '合并分片失败');
+      }
 
-    final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
-    if (url == null || url.isEmpty) {
-      throw Exception('合并分片失败：未返回URL');
+      final url = (data['data'] as Map<String, dynamic>?)?['url'] as String?;
+      if (url == null || url.isEmpty) {
+        await _log.e('Upload', 'mergeChunks: no URL in response: $data');
+        throw Exception('合并分片失败：未返回URL');
+      }
+      await _log.i('Upload', 'mergeChunks OK: url=$url');
+      return url;
+    } on DioException catch (e, st) {
+      await _log.e('Upload', 'mergeChunks DioException: '
+          'status=${e.response?.statusCode}, responseData=${e.response?.data}', e, st);
+      rethrow;
     }
-    return url;
   }
 
   /// Merge chunks for images.
@@ -413,16 +487,24 @@ class UploadService {
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
+      await _log.e('Upload', 'uploadVideoChunked: file not found: $filePath');
       throw Exception('视频文件不存在');
     }
 
     final fileSize = await file.length();
     final filename = file.path.split('/').last;
 
+    await _log.i('Upload', 'uploadVideoChunked START: file=$filename, '
+        'size=$fileSize, resume=${resumeDraft != null}');
+
     // Get chunk config from server
     final config = await getChunkConfig();
 
+    await _log.i('Upload', 'uploadVideoChunked config: chunkSize=${config.chunkSize}, '
+        'maxFileSize=${config.maxFileSize}');
+
     if (fileSize > config.maxFileSize) {
+      await _log.e('Upload', 'uploadVideoChunked: file too large: $fileSize > ${config.maxFileSize}');
       throw Exception(
           '视频文件过大，最大允许${(config.maxFileSize / 1024 / 1024).round()}MB');
     }
@@ -432,6 +514,9 @@ class UploadService {
     final identifier =
         resumeDraft?.identifier ?? await generateIdentifier(file);
     final fileMd5 = await _computeFileMd5(file);
+
+    await _log.i('Upload', 'uploadVideoChunked: totalChunks=$totalChunks, '
+        'identifier=$identifier, md5=$fileMd5');
 
     // Determine which chunks are already uploaded (for resumable upload)
     final uploadedChunks = <int>{};
@@ -449,7 +534,12 @@ class UploadService {
       }
     }
 
+    await _log.i('Upload', 'uploadVideoChunked: already uploaded ${uploadedChunks.length}/$totalChunks chunks');
+
     onProgress?.call(uploadedChunks.length, totalChunks);
+
+    // Use path_provider for temp directory (more reliable on mobile)
+    final tempDir = await getTemporaryDirectory();
 
     // Upload remaining chunks
     final raf = await file.open(mode: FileMode.read);
@@ -465,11 +555,28 @@ class UploadService {
         await raf.setPosition(start);
         final chunkBytes = await raf.read(chunkLength);
 
+        // Validate chunk was read correctly
+        if (chunkBytes.length != chunkLength) {
+          await _log.e('Upload', 'uploadVideoChunked: chunk $i read mismatch: '
+              'expected=$chunkLength, actual=${chunkBytes.length}');
+          throw Exception('分片 $i 读取失败：期望 $chunkLength 字节，实际 ${chunkBytes.length} 字节');
+        }
+
         // Write chunk to a temp file
-        final tempDir = Directory.systemTemp;
         final tempFile =
             File('${tempDir.path}/chunk_${identifier}_$i.tmp');
-        await tempFile.writeAsBytes(chunkBytes);
+        await tempFile.writeAsBytes(chunkBytes, flush: true);
+
+        // Validate temp file was written correctly
+        final writtenSize = await tempFile.length();
+        if (writtenSize != chunkLength) {
+          await _log.e('Upload', 'uploadVideoChunked: chunk $i write mismatch: '
+              'expected=$chunkLength, written=$writtenSize');
+          throw Exception('分片 $i 写入失败：期望 $chunkLength 字节，写入 $writtenSize 字节');
+        }
+
+        await _log.d('Upload', 'uploadVideoChunked: chunk $i/$totalChunks prepared, '
+            'start=$start, end=$end, size=$chunkLength');
 
         try {
           final success = await uploadChunk(
@@ -481,6 +588,7 @@ class UploadService {
           );
 
           if (!success) {
+            await _log.e('Upload', 'uploadVideoChunked: chunk $i/$totalChunks upload returned failure');
             throw Exception('分片 $i/$totalChunks 上传失败');
           }
 
@@ -497,12 +605,16 @@ class UploadService {
       await raf.close();
     }
 
+    await _log.i('Upload', 'uploadVideoChunked: all chunks uploaded, merging...');
+
     // All chunks uploaded, merge them
     final videoUrl = await mergeChunks(
       identifier: identifier,
       totalChunks: totalChunks,
       filename: filename,
     );
+
+    await _log.i('Upload', 'uploadVideoChunked DONE: url=$videoUrl');
 
     // Clear draft on success
     await clearVideoDraft();
@@ -520,18 +632,26 @@ class UploadService {
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
+      await _log.e('Upload', 'uploadImageChunked: file not found: $filePath');
       throw Exception('图片文件不存在');
     }
 
     final fileSize = await file.length();
     final filename = file.path.split('/').last;
 
+    await _log.i('Upload', 'uploadImageChunked START: file=$filename, size=$fileSize');
+
     final config = await getChunkConfig();
     final chunkSize = config.chunkSize;
     final totalChunks = (fileSize / chunkSize).ceil();
     final identifier = await generateIdentifier(file);
 
+    await _log.i('Upload', 'uploadImageChunked: totalChunks=$totalChunks, identifier=$identifier');
+
     final uploadedChunks = <int>{};
+
+    // Use path_provider for temp directory
+    final tempDir = await getTemporaryDirectory();
 
     // Upload chunks
     final raf = await file.open(mode: FileMode.read);
@@ -544,10 +664,24 @@ class UploadService {
         await raf.setPosition(start);
         final chunkBytes = await raf.read(chunkLength);
 
-        final tempDir = Directory.systemTemp;
+        // Validate chunk was read correctly
+        if (chunkBytes.length != chunkLength) {
+          await _log.e('Upload', 'uploadImageChunked: chunk $i read mismatch: '
+              'expected=$chunkLength, actual=${chunkBytes.length}');
+          throw Exception('图片分片 $i 读取失败');
+        }
+
         final tempFile =
             File('${tempDir.path}/chunk_${identifier}_$i.tmp');
-        await tempFile.writeAsBytes(chunkBytes);
+        await tempFile.writeAsBytes(chunkBytes, flush: true);
+
+        // Validate temp file was written correctly
+        final writtenSize = await tempFile.length();
+        if (writtenSize != chunkLength) {
+          await _log.e('Upload', 'uploadImageChunked: chunk $i write mismatch: '
+              'expected=$chunkLength, written=$writtenSize');
+          throw Exception('图片分片 $i 写入失败');
+        }
 
         try {
           final success = await uploadChunk(
@@ -559,6 +693,7 @@ class UploadService {
           );
 
           if (!success) {
+            await _log.e('Upload', 'uploadImageChunked: chunk $i/$totalChunks upload failed');
             throw Exception('图片分片 $i/$totalChunks 上传失败');
           }
 
@@ -573,6 +708,8 @@ class UploadService {
     } finally {
       await raf.close();
     }
+
+    await _log.i('Upload', 'uploadImageChunked: all chunks uploaded, merging...');
 
     // Merge chunks
     return mergeImageChunks(
@@ -617,13 +754,19 @@ class UploadService {
     final file = File(filePath);
     final fileSize = await file.length();
 
+    await _log.i('Upload', 'smartUploadVideo: file=${file.path.split('/').last}, '
+        'size=$fileSize, threshold=$chunkThreshold');
+
     if (fileSize <= chunkThreshold) {
+      await _log.i('Upload', 'smartUploadVideo: using direct upload (size <= threshold)');
       return uploadVideo(filePath);
     }
 
     // Check for existing draft
     final draft = await loadVideoDraft();
     if (draft != null && draft.filePath == filePath) {
+      await _log.i('Upload', 'smartUploadVideo: resuming from draft '
+          '(${draft.uploadedChunks.length}/${draft.totalChunks} chunks)');
       return uploadVideoChunked(
         filePath: filePath,
         onProgress: onProgress,
@@ -631,6 +774,7 @@ class UploadService {
       );
     }
 
+    await _log.i('Upload', 'smartUploadVideo: using chunked upload');
     return uploadVideoChunked(
       filePath: filePath,
       onProgress: onProgress,
@@ -644,6 +788,9 @@ class UploadService {
   }) async {
     final file = File(filePath);
     final fileSize = await file.length();
+
+    await _log.i('Upload', 'smartUploadImage: file=${file.path.split('/').last}, '
+        'size=$fileSize, threshold=$chunkThreshold');
 
     if (fileSize <= chunkThreshold) {
       return uploadImage(filePath);

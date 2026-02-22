@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../config/layout_config.dart';
+import '../services/log_service.dart';
 import '../services/post_service.dart';
 import '../services/upload_service.dart';
 
@@ -301,6 +302,10 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
       return;
     }
 
+    final log = await LogService.getInstance();
+    await log.i('Publish', 'publish START: title=$title, '
+        'images=${_selectedImages.length}, hasVideo=${_selectedVideo != null}');
+
     setState(() {
       _isPublishing = true;
       _isUploading = _selectedImages.isNotEmpty || _selectedVideo != null;
@@ -317,13 +322,16 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
       if (_selectedImages.isNotEmpty) {
         imageUrls = [];
         for (final imageFile in _selectedImages) {
+          await log.i('Publish', 'uploading image: ${imageFile.path}');
           final url = await postService.uploadImage(imageFile.path);
           imageUrls.add(url);
         }
+        await log.i('Publish', 'all images uploaded: $imageUrls');
       }
 
       // Upload video with progress tracking
       if (_selectedVideo != null) {
+        await log.i('Publish', 'uploading video: ${_selectedVideo!.path}');
         videoUrl = await postService.uploadVideo(
           _selectedVideo!.path,
           onProgress: (uploaded, total) {
@@ -335,12 +343,14 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
             }
           },
         );
+        await log.i('Publish', 'video uploaded: $videoUrl');
       }
 
       if (mounted) {
         setState(() => _isUploading = false);
       }
 
+      await log.i('Publish', 'creating post...');
       await postService.createPost(
         title: title,
         content: content,
@@ -350,10 +360,14 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
         type: _postType,
       );
 
+      await log.i('Publish', 'publish DONE');
+
       if (!mounted) return;
 
       Navigator.pop(context, true);
-    } catch (e) {
+    } catch (e, st) {
+      await log.e('Publish', 'publish FAILED', e, st);
+
       if (!mounted) return;
 
       // Save draft on failure if it was a video upload
