@@ -331,8 +331,8 @@ class _PublishPageState extends State<PublishPage> {
                 if (_isUploading)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         SizedBox(
                           width: 14, height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
