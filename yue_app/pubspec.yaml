@@ -44,6 +44,7 @@ dependencies:
   open_filex: ^4.5.0
   permission_handler: ^11.4.0
   image_picker: ^1.1.2
+  crypto: ^3.0.6
 
 dev_dependencies:
   flutter_test:

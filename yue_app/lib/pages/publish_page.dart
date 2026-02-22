@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../config/layout_config.dart';
+import '../services/log_service.dart';
 import '../services/post_service.dart';
+import '../services/upload_service.dart';
 
 class PublishPage extends StatefulWidget {
   const PublishPage({super.key});
@@ -12,7 +14,7 @@ class PublishPage extends StatefulWidget {
   State<PublishPage> createState() => _PublishPageState();
 }
 
-class _PublishPageState extends State<PublishPage> {
+class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _tagController = TextEditingController();
@@ -23,14 +25,119 @@ class _PublishPageState extends State<PublishPage> {
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
 
+  // Upload progress tracking
+  int _uploadedChunks = 0;
+  int _totalChunks = 0;
+  double get _uploadProgress =>
+      _totalChunks > 0 ? _uploadedChunks / _totalChunks : 0.0;
+
+  // Draft state
+  VideoUploadDraft? _resumeDraft;
+  bool _hasDraft = false;
+
   int get _postType => _selectedVideo != null ? 2 : 1;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkForDraft();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _titleController.dispose();
     _contentController.dispose();
     _tagController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Save draft when app goes to background during upload
+    if (state == AppLifecycleState.paused && _isUploading && _selectedVideo != null) {
+      _saveCurrentDraft();
+    }
+  }
+
+  Future<void> _checkForDraft() async {
+    final uploadService = await UploadService.getInstance();
+    final draft = await uploadService.loadVideoDraft();
+    if (draft != null && mounted) {
+      setState(() {
+        _resumeDraft = draft;
+        _hasDraft = true;
+      });
+    }
+  }
+
+  Future<void> _resumeFromDraft() async {
+    if (_resumeDraft == null) return;
+
+    final file = File(_resumeDraft!.filePath);
+    if (!await file.exists()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('草稿中的视频文件已不存在')),
+      );
+      final uploadService = await UploadService.getInstance();
+      await uploadService.clearVideoDraft();
+      setState(() {
+        _resumeDraft = null;
+        _hasDraft = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _selectedVideo = file;
+      if (_resumeDraft!.title != null) {
+        _titleController.text = _resumeDraft!.title!;
+      }
+      if (_resumeDraft!.content != null) {
+        _contentController.text = _resumeDraft!.content!;
+      }
+      if (_resumeDraft!.tags != null) {
+        _tags.clear();
+        _tags.addAll(_resumeDraft!.tags!);
+      }
+      _hasDraft = false;
+    });
+  }
+
+  Future<void> _discardDraft() async {
+    final uploadService = await UploadService.getInstance();
+    await uploadService.clearVideoDraft();
+    setState(() {
+      _resumeDraft = null;
+      _hasDraft = false;
+    });
+  }
+
+  Future<void> _saveCurrentDraft() async {
+    if (_selectedVideo == null) return;
+    final uploadService = await UploadService.getInstance();
+    final file = File(_selectedVideo!.path);
+    final identifier = await uploadService.generateIdentifier(file);
+    final config = await uploadService.getChunkConfig();
+    final fileSize = await file.length();
+    final totalChunks = (fileSize / config.chunkSize).ceil();
+
+    await uploadService.createDraftSnapshot(
+      filePath: _selectedVideo!.path,
+      identifier: identifier,
+      filename: file.path.split('/').last,
+      totalChunks: totalChunks,
+      chunkSize: config.chunkSize,
+      uploadedChunks: List.generate(
+        _uploadedChunks,
+        (i) => i + 1,
+      ),
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      tags: _tags.isNotEmpty ? _tags : null,
+    );
   }
 
   void _addTag() {
@@ -195,9 +302,15 @@ class _PublishPageState extends State<PublishPage> {
       return;
     }
 
+    final log = await LogService.getInstance();
+    await log.i('Publish', 'publish START: title=$title, '
+        'images=${_selectedImages.length}, hasVideo=${_selectedVideo != null}');
+
     setState(() {
       _isPublishing = true;
       _isUploading = _selectedImages.isNotEmpty || _selectedVideo != null;
+      _uploadedChunks = 0;
+      _totalChunks = 0;
     });
 
     try {
@@ -209,20 +322,35 @@ class _PublishPageState extends State<PublishPage> {
       if (_selectedImages.isNotEmpty) {
         imageUrls = [];
         for (final imageFile in _selectedImages) {
+          await log.i('Publish', 'uploading image: ${imageFile.path}');
           final url = await postService.uploadImage(imageFile.path);
           imageUrls.add(url);
         }
+        await log.i('Publish', 'all images uploaded: $imageUrls');
       }
 
-      // Upload video
+      // Upload video with progress tracking
       if (_selectedVideo != null) {
-        videoUrl = await postService.uploadVideo(_selectedVideo!.path);
+        await log.i('Publish', 'uploading video: ${_selectedVideo!.path}');
+        videoUrl = await postService.uploadVideo(
+          _selectedVideo!.path,
+          onProgress: (uploaded, total) {
+            if (mounted) {
+              setState(() {
+                _uploadedChunks = uploaded;
+                _totalChunks = total;
+              });
+            }
+          },
+        );
+        await log.i('Publish', 'video uploaded: $videoUrl');
       }
 
       if (mounted) {
         setState(() => _isUploading = false);
       }
 
+      await log.i('Publish', 'creating post...');
       await postService.createPost(
         title: title,
         content: content,
@@ -232,14 +360,31 @@ class _PublishPageState extends State<PublishPage> {
         type: _postType,
       );
 
+      await log.i('Publish', 'publish DONE');
+
       if (!mounted) return;
 
       Navigator.pop(context, true);
-    } catch (e) {
+    } catch (e, st) {
+      await log.e('Publish', 'publish FAILED', e, st);
+
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
+
+      // Save draft on failure if it was a video upload
+      if (_selectedVideo != null && _uploadedChunks > 0) {
+        await _saveCurrentDraft();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '${e.toString().replaceFirst('Exception: ', '')}\n上传进度已保存为草稿，可稍后继续'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -327,18 +472,79 @@ class _PublishPageState extends State<PublishPage> {
                   maxLines: null,
                   minLines: 8,
                 ),
-                // Upload status
+                // Draft resume banner
+                if (_hasDraft && _resumeDraft != null)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFE082)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.restore_rounded, size: 20, color: Color(0xFFFF9800)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '有未完成的视频上传（${_resumeDraft!.uploadedChunks.length}/${_resumeDraft!.totalChunks}分片）',
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF795548)),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _resumeFromDraft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF9800),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text('继续', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: _discardDraft,
+                          child: const Icon(Icons.close, size: 18, color: Color(0xFF999999)),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Upload status with progress
                 if (_isUploading)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: const Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: 14, height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 14, height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _totalChunks > 0
+                                  ? '正在上传 $_uploadedChunks/$_totalChunks 分片 (${(_uploadProgress * 100).toStringAsFixed(0)}%)'
+                                  : '正在上传媒体文件...',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFFF9800)),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 6),
-                        Text('正在上传媒体文件...', style: TextStyle(fontSize: 12, color: Color(0xFFFF9800))),
+                        if (_totalChunks > 0) ...[
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _uploadProgress,
+                              backgroundColor: const Color(0xFFE0E0E0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+                              minHeight: 4,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
