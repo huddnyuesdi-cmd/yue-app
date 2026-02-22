@@ -254,7 +254,6 @@ class _PublishPageState extends State<PublishPage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final publishMaxWidth = LayoutConfig.getPublishMaxWidth(screenWidth);
-    final gridColumns = LayoutConfig.getMediaGridColumns(screenWidth);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -298,104 +297,82 @@ class _PublishPageState extends State<PublishPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Unified media section
-                _buildMediaSection(gridColumns),
-                const SizedBox(height: 16),
+                // Compact media section (top-left)
+                _buildMediaSection(),
                 // Title input
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(12),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    hintText: '填写标题，会有更多赞哦~',
+                    hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                    counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
                   ),
-                  child: TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      hintText: '填写标题，会有更多赞哦~',
-                      hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(16),
-                      counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
-                    ),
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-                    maxLength: 100,
-                    maxLines: 2,
-                  ),
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  maxLength: 100,
+                  maxLines: 2,
                 ),
-                const SizedBox(height: 12),
                 // Content input
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(12),
+                TextField(
+                  controller: _contentController,
+                  decoration: const InputDecoration(
+                    hintText: '添加正文',
+                    hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   ),
-                  child: TextField(
-                    controller: _contentController,
-                    decoration: const InputDecoration(
-                      hintText: '添加正文',
-                      hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(16),
-                    ),
-                    style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
-                    maxLines: null,
-                    minLines: 8,
-                  ),
+                  style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
+                  maxLines: null,
+                  minLines: 6,
                 ),
-                const SizedBox(height: 20),
                 // Upload status
                 if (_isUploading)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: const [
                         SizedBox(
-                          width: 16, height: 16,
+                          width: 14, height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
                         ),
-                        SizedBox(width: 8),
-                        Text('正在上传媒体文件...', style: TextStyle(fontSize: 13, color: Color(0xFFFF9800))),
+                        SizedBox(width: 6),
+                        Text('正在上传媒体文件...', style: TextStyle(fontSize: 12, color: Color(0xFFFF9800))),
                       ],
                     ),
                   ),
                 // Tags section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '添加标签',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-                      ),
-                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(
-                            child: Container(
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(19),
-                              ),
+                            child: SizedBox(
+                              height: 36,
                               child: TextField(
                                 controller: _tagController,
-                                decoration: const InputDecoration(
-                                  hintText: '输入标签',
-                                  hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: InputDecoration(
+                                  hintText: '# 添加标签',
+                                  hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    borderSide: const BorderSide(color: Color(0xFFFF2442)),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   isDense: true,
                                 ),
-                                style: const TextStyle(fontSize: 13),
+                                style: const TextStyle(fontSize: 14),
                                 onSubmitted: (_) => _addTag(),
                               ),
                             ),
@@ -404,13 +381,13 @@ class _PublishPageState extends State<PublishPage> {
                           GestureDetector(
                             onTap: _addTag,
                             child: Container(
-                              width: 38,
-                              height: 38,
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFFFF2442), Color(0xFFFF5C6A)],
                                 ),
-                                borderRadius: BorderRadius.circular(19),
+                                borderRadius: BorderRadius.circular(18),
                               ),
                               child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
                             ),
@@ -418,16 +395,16 @@ class _PublishPageState extends State<PublishPage> {
                         ],
                       ),
                       if (_tags.isNotEmpty) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 6,
                           children: _tags
                               .map((tag) => Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF5F5F5),
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -455,7 +432,7 @@ class _PublishPageState extends State<PublishPage> {
     );
   }
 
-  Widget _buildMediaSection(int gridColumns) {
+  Widget _buildMediaSection() {
     // Build list of media items: images first, then video
     final List<_MediaItem> mediaItems = [];
 
@@ -468,156 +445,150 @@ class _PublishPageState extends State<PublishPage> {
     }
 
     final bool showAddButton = _selectedImages.length < 9 || _selectedVideo == null;
-    final int itemCount = mediaItems.length + (showAddButton ? 1 : 0);
 
-    // Empty state - show large add area
+    // Empty state - small compact add button at top-left
     if (mediaItems.isEmpty) {
-      return GestureDetector(
-        onTap: _showAddMediaSheet,
-        child: Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F7F8),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-          ),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_photo_alternate_outlined, size: 48, color: Color(0xFFBBBBBB)),
-              SizedBox(height: 10),
-              Text('添加图片或视频', style: TextStyle(fontSize: 15, color: Color(0xFF999999))),
-              SizedBox(height: 4),
-              Text('图片最多9张，视频最多1个', style: TextStyle(fontSize: 12, color: Color(0xFFCCCCCC))),
-            ],
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: GestureDetector(
+          onTap: _showAddMediaSheet,
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F7F8),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_photo_alternate_outlined, size: 28, color: Color(0xFFBBBBBB)),
+                SizedBox(height: 2),
+                Text('添加', style: TextStyle(fontSize: 10, color: Color(0xFF999999))),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: gridColumns,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemCount: itemCount,
-          itemBuilder: (context, index) {
-            if (index == mediaItems.length) {
-              // Add button
-              return GestureDetector(
-                onTap: _showAddMediaSheet,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F8),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_rounded, size: 32, color: Color(0xFFBBBBBB)),
-                      SizedBox(height: 4),
-                      Text('添加', style: TextStyle(fontSize: 11, color: Color(0xFFBBBBBB))),
-                    ],
-                  ),
-                ),
-              );
-            }
+    // Media items as a compact horizontal row
+    final int itemCount = mediaItems.length + (showAddButton ? 1 : 0);
 
-            final item = mediaItems[index];
-            if (item.type == _MediaType.image) {
-              return _buildImageItem(item.index);
-            } else {
-              return _buildVideoItem();
-            }
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            '图片 ${_selectedImages.length}/9${_selectedVideo != null ? '  视频 1/1' : ''}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-          ),
-        ),
-      ],
+    return SizedBox(
+      height: 80,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          if (index == mediaItems.length) {
+            // Compact add button
+            return GestureDetector(
+              onTap: _showAddMediaSheet,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F7F8),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_rounded, size: 24, color: Color(0xFFBBBBBB)),
+                    SizedBox(height: 2),
+                    Text('添加', style: TextStyle(fontSize: 10, color: Color(0xFFBBBBBB))),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final item = mediaItems[index];
+          if (item.type == _MediaType.image) {
+            return _buildImageItem(item.index);
+          } else {
+            return _buildVideoItem();
+          }
+        },
+      ),
     );
   }
 
   Widget _buildImageItem(int index) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            _selectedImages[index],
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: () => _removeImage(index),
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
+    return SizedBox(
+      width: 80,
+      height: 80,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              _selectedImages[index],
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
             ),
           ),
-        ),
-      ],
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () => _removeImage(index),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 12, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildVideoItem() {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.videocam_rounded, size: 32, color: Colors.white70),
-                SizedBox(height: 4),
-                Text('视频', style: TextStyle(color: Colors.white70, fontSize: 11)),
-              ],
+    return SizedBox(
+      width: 80,
+      height: 80,
+      child: Stack(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Icon(Icons.videocam_rounded, size: 28, color: Colors.white70),
             ),
           ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: _removeVideo,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: _removeVideo,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 12, color: Colors.white),
               ),
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

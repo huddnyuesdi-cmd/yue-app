@@ -7,11 +7,6 @@ class LayoutConfig {
     return 480;
   }
 
-  static int getMediaGridColumns(double screenWidth) {
-    if (screenWidth >= 768) return 4;
-    return 3;
-  }
-
   static int getGridColumnCount(double width) {
     return 2;
   }
