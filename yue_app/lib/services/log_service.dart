@@ -96,7 +96,7 @@ class LogService {
   }
 
   /// Get the path to today's log file (for display/sharing).
-  String get todayLogPath => _getTodayLogFile().path;
+  String get todayLogPath => _logDir != null ? _getTodayLogFile().path : '';
 
   /// Get the log directory path.
   String get logDirPath => _logDir?.path ?? '';
