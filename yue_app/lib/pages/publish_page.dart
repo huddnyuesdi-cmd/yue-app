@@ -254,9 +254,11 @@ class _PublishPageState extends State<PublishPage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final publishMaxWidth = LayoutConfig.getPublishMaxWidth(screenWidth);
+    final hPadding = LayoutConfig.getPublishHorizontalPadding(screenWidth);
+    final thumbSize = LayoutConfig.getMediaThumbnailSize(screenWidth);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -288,135 +290,177 @@ class _PublishPageState extends State<PublishPage> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: publishMaxWidth),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.fromLTRB(hPadding, 12, hPadding, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Compact media section (top-left)
-                _buildMediaSection(),
-                // Title input
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    hintText: '填写标题，会有更多赞哦~',
-                    hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                    counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                // Upload area container
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-                  maxLength: 100,
-                  maxLines: 2,
+                  child: _buildMediaSection(thumbSize),
                 ),
-                // Content input
-                TextField(
-                  controller: _contentController,
-                  decoration: const InputDecoration(
-                    hintText: '添加正文',
-                    hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                const SizedBox(height: 10),
+                // Title container
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
-                  maxLines: null,
-                  minLines: 8,
+                  child: TextField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      hintText: '填写标题，会有更多赞哦~',
+                      hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
+                    ),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                    maxLength: 100,
+                    maxLines: 2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Content container
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _contentController,
+                    decoration: const InputDecoration(
+                      hintText: '添加正文',
+                      hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    ),
+                    style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
+                    maxLines: null,
+                    minLines: 8,
+                  ),
                 ),
                 // Upload status
                 if (_isUploading)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: const Row(
-                      children: [
-                        SizedBox(
-                          width: 14, height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
-                        ),
-                        SizedBox(width: 6),
-                        Text('正在上传媒体文件...', style: TextStyle(fontSize: 12, color: Color(0xFFFF9800))),
-                      ],
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        children: [
+                          SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
+                          ),
+                          SizedBox(width: 6),
+                          Text('正在上传媒体文件...', style: TextStyle(fontSize: 12, color: Color(0xFFFF9800))),
+                        ],
+                      ),
                     ),
                   ),
                 // Tags section
                 Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 36,
-                              child: TextField(
-                                controller: _tagController,
-                                decoration: InputDecoration(
-                                  hintText: '# 添加标签',
-                                  hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 36,
+                                child: TextField(
+                                  controller: _tagController,
+                                  decoration: InputDecoration(
+                                    hintText: '# 添加标签',
+                                    hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: const BorderSide(color: Color(0xFFFF2442)),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    isDense: true,
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                    borderSide: const BorderSide(color: Color(0xFFFF2442)),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  isDense: true,
+                                  style: const TextStyle(fontSize: 14),
+                                  onSubmitted: (_) => _addTag(),
                                 ),
-                                style: const TextStyle(fontSize: 14),
-                                onSubmitted: (_) => _addTag(),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _addTag,
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFFF2442), Color(0xFFFF5C6A)],
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: _addTag,
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFF2442), Color(0xFFFF5C6A)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
-                                borderRadius: BorderRadius.circular(18),
+                                child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
                               ),
-                              child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
                             ),
+                          ],
+                        ),
+                        if (_tags.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: _tags
+                                .map((tag) => Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F5F5),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
+                                          const SizedBox(width: 4),
+                                          GestureDetector(
+                                            onTap: () => _removeTag(tag),
+                                            child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF999999)),
+                                          ),
+                                        ],
+                                      ),
+                                    ))
+                                .toList(),
                           ),
                         ],
-                      ),
-                      if (_tags.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
-                          children: _tags
-                              .map((tag) => Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F5F5),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text('#$tag', style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
-                                        const SizedBox(width: 4),
-                                        GestureDetector(
-                                          onTap: () => _removeTag(tag),
-                                          child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF999999)),
-                                        ),
-                                      ],
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -427,7 +471,7 @@ class _PublishPageState extends State<PublishPage> {
     );
   }
 
-  Widget _buildMediaSection() {
+  Widget _buildMediaSection(double thumbSize) {
     // Build list of media items: images first, then video
     final List<_MediaItem> mediaItems = [];
 
@@ -448,8 +492,8 @@ class _PublishPageState extends State<PublishPage> {
         child: GestureDetector(
           onTap: _showAddMediaSheet,
           child: Container(
-            width: 80,
-            height: 80,
+            width: thumbSize,
+            height: thumbSize,
             decoration: BoxDecoration(
               color: const Color(0xFFF7F7F8),
               borderRadius: BorderRadius.circular(8),
@@ -472,7 +516,7 @@ class _PublishPageState extends State<PublishPage> {
     final int itemCount = mediaItems.length + (showAddButton ? 1 : 0);
 
     return SizedBox(
-      height: 80,
+      height: thumbSize,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: itemCount,
@@ -483,8 +527,8 @@ class _PublishPageState extends State<PublishPage> {
             return GestureDetector(
               onTap: _showAddMediaSheet,
               child: Container(
-                width: 80,
-                height: 80,
+                width: thumbSize,
+                height: thumbSize,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF7F7F8),
                   borderRadius: BorderRadius.circular(8),
@@ -504,27 +548,27 @@ class _PublishPageState extends State<PublishPage> {
 
           final item = mediaItems[index];
           if (item.type == _MediaType.image) {
-            return _buildImageItem(item.index);
+            return _buildImageItem(item.index, thumbSize);
           } else {
-            return _buildVideoItem();
+            return _buildVideoItem(thumbSize);
           }
         },
       ),
     );
   }
 
-  Widget _buildImageItem(int index) {
+  Widget _buildImageItem(int index, double size) {
     return SizedBox(
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       child: Stack(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.file(
               _selectedImages[index],
-              width: 80,
-              height: 80,
+              width: size,
+              height: size,
               fit: BoxFit.cover,
             ),
           ),
@@ -549,15 +593,15 @@ class _PublishPageState extends State<PublishPage> {
     );
   }
 
-  Widget _buildVideoItem() {
+  Widget _buildVideoItem(double size) {
     return SizedBox(
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       child: Stack(
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               color: const Color(0xFF1A1A1A),
               borderRadius: BorderRadius.circular(8),
