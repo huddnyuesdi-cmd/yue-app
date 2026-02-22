@@ -286,7 +286,8 @@ class _PublishPageState extends State<PublishPage> {
           ),
         ],
       ),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: publishMaxWidth),
           child: SingleChildScrollView(
