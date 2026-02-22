@@ -306,7 +306,7 @@ class _PublishPageState extends State<PublishPage> {
                     hintText: '填写标题，会有更多赞哦~',
                     hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                     counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
                   ),
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
@@ -320,18 +320,18 @@ class _PublishPageState extends State<PublishPage> {
                     hintText: '添加正文',
                     hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
                   style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
                   maxLines: null,
-                  minLines: 6,
+                  minLines: 8,
                 ),
                 // Upload status
                 if (_isUploading)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         SizedBox(
                           width: 14, height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
