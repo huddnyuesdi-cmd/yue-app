@@ -3,6 +3,7 @@ import '../config/api_config.dart';
 import '../models/comment_model.dart';
 import '../models/post_model.dart';
 import 'storage_service.dart';
+import 'upload_service.dart';
 import 'dart:io';
 
 class PostService {
@@ -1202,96 +1203,22 @@ class PostService {
 
   /// Upload a single image file.
   /// Returns the uploaded image URL.
+  /// For large images (>5MB), uses chunked upload automatically.
   Future<String> uploadImage(String filePath) async {
-    final token = _storage.getCommunityToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('请先登录');
-    }
-
-    try {
-      final file = File(filePath);
-      final fileName = file.path.split('/').last;
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath, filename: fileName),
-      });
-
-      final response = await _dio.post(
-        '/api/upload/single',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      final data = response.data as Map<String, dynamic>;
-      final code = data['code'] as int?;
-
-      if (code != 200) {
-        throw Exception(data['message'] as String? ?? '图片上传失败');
-      }
-
-      final responseData = data['data'] as Map<String, dynamic>?;
-      final url = responseData?['url'] as String?;
-
-      if (url == null || url.isEmpty) {
-        throw Exception('图片上传失败：未返回URL');
-      }
-
-      return url;
-    } on DioException catch (e) {
-      _throwDioError(e);
-    }
+    final uploadService = await UploadService.getInstance();
+    return uploadService.smartUploadImage(filePath: filePath);
   }
 
   /// Upload a video file.
   /// Returns the uploaded video URL.
-  Future<String> uploadVideo(String filePath) async {
-    final token = _storage.getCommunityToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('请先登录');
-    }
-
-    try {
-      final file = File(filePath);
-      final fileName = file.path.split('/').last;
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath, filename: fileName),
-      });
-
-      final response = await _dio.post(
-        '/api/upload/video',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-          sendTimeout: const Duration(minutes: 5),
-          receiveTimeout: const Duration(minutes: 5),
-        ),
-      );
-
-      final data = response.data as Map<String, dynamic>;
-      final code = data['code'] as int?;
-
-      if (code != 200) {
-        throw Exception(data['message'] as String? ?? '视频上传失败');
-      }
-
-      final responseData = data['data'] as Map<String, dynamic>?;
-      final url = responseData?['url'] as String?;
-
-      if (url == null || url.isEmpty) {
-        throw Exception('视频上传失败：未返回URL');
-      }
-
-      return url;
-    } on DioException catch (e) {
-      _throwDioError(e);
-    }
+  /// For large videos (>5MB), uses chunked upload with resumable support.
+  Future<String> uploadVideo(String filePath,
+      {ChunkProgressCallback? onProgress}) async {
+    final uploadService = await UploadService.getInstance();
+    return uploadService.smartUploadVideo(
+      filePath: filePath,
+      onProgress: onProgress,
+    );
   }
 
   Never _throwDioError(DioException e) {

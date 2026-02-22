@@ -13,6 +13,7 @@ class StorageService {
   static const String _keyFollowStatusPrefix = 'follow_status_';
   static const String _keyPostLikePrefix = 'post_liked_';
   static const String _keyPostCollectPrefix = 'post_collected_';
+  static const String _keyVideoDraft = 'video_upload_draft';
 
   static const String _obfuscationKey = 'YueM@2024!Secure#Key';
   static const String _encPrefix = 'e:';
@@ -269,5 +270,18 @@ class StorageService {
   bool isLoggedIn() {
     final token = getUserCenterToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // Video Upload Draft (for resumable upload)
+  Future<void> setVideoDraft(String jsonStr) async {
+    await _setObfuscatedString(_keyVideoDraft, jsonStr);
+  }
+
+  String? getVideoDraft() {
+    return _getObfuscatedString(_keyVideoDraft);
+  }
+
+  Future<void> clearVideoDraft() async {
+    await _removeKey(_keyVideoDraft);
   }
 }
