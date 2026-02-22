@@ -261,14 +261,9 @@ class _PublishPageState extends State<PublishPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFF333333)),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF333333)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '发布笔记',
-          style: TextStyle(fontSize: 16, color: Color(0xFF333333), fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -293,7 +288,7 @@ class _PublishPageState extends State<PublishPage> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: publishMaxWidth),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

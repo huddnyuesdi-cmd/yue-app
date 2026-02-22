@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'pages/splash_page.dart';
+import 'services/auth_service.dart';
+import 'pages/home_page.dart';
+import 'pages/login_page.dart';
 
 /// System overlay style: transparent status bar, white navigation bar.
 const kSystemUiOverlayStyle = SystemUiOverlayStyle(
@@ -33,7 +35,40 @@ class YueMApp extends StatelessWidget {
           systemOverlayStyle: kSystemUiOverlayStyle,
         ),
       ),
-      home: const SplashPage(),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AuthService>(
+      future: AuthService.getInstance(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFFDDDDDD),
+                ),
+              ),
+            ),
+          );
+        }
+        final authService = snapshot.data!;
+        if (authService.isLoggedIn()) {
+          return const HomePage();
+        }
+        return const LoginPage();
+      },
     );
   }
 }
