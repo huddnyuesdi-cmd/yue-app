@@ -383,10 +383,16 @@ class UploadService {
     return url;
   }
 
-  /// Compute MD5 hash of a file.
+  /// Compute MD5 hash of a file using streaming to avoid loading entire file into memory.
   Future<String> _computeFileMd5(File file) async {
-    final bytes = await file.readAsBytes();
-    return md5.convert(bytes).toString();
+    final digestOutput = _DigestSink();
+    final input = md5.startChunkedConversion(digestOutput);
+    final stream = file.openRead();
+    await for (final chunk in stream) {
+      input.add(chunk);
+    }
+    input.close();
+    return digestOutput.value.toString();
   }
 
   /// Generate a unique identifier for a file based on its name, size, and last modified time.
@@ -671,4 +677,17 @@ class UploadService {
     await saveVideoDraft(draft);
     return draft;
   }
+}
+
+/// Simple sink to capture the final [Digest] value from a chunked hash conversion.
+class _DigestSink extends Sink<Digest> {
+  late Digest value;
+
+  @override
+  void add(Digest data) {
+    value = data;
+  }
+
+  @override
+  void close() {}
 }
