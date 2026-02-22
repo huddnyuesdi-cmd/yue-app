@@ -680,7 +680,7 @@ class UploadService {
 }
 
 /// Simple sink to capture the final [Digest] value from a chunked hash conversion.
-class _DigestSink extends Sink<Digest> {
+class _DigestSink implements Sink<Digest> {
   late Digest value;
 
   @override
