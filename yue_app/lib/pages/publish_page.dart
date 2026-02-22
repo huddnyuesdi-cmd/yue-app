@@ -542,8 +542,7 @@ class _PublishPageState extends State<PublishPage> {
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            '图片 ${_selectedImages.length}/9'
-            '${_selectedVideo != null ? '  视频 1/1' : ''}',
+            '图片 ${_selectedImages.length}/9${_selectedVideo != null ? '  视频 1/1' : ''}',
             style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
           ),
         ),
