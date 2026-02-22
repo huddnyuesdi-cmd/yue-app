@@ -13,6 +13,7 @@ class PublishPage extends StatefulWidget {
 }
 
 class _PublishPageState extends State<PublishPage> {
+  static const int _maxImageCount = 9;
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _tagController = TextEditingController();
@@ -46,7 +47,7 @@ class _PublishPageState extends State<PublishPage> {
   }
 
   Future<void> _pickImages() async {
-    if (_selectedImages.length >= 9) {
+    if (_selectedImages.length >= _maxImageCount) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('最多只能选择9张图片')),
       );
@@ -59,7 +60,7 @@ class _PublishPageState extends State<PublishPage> {
       );
 
       if (pickedFiles.isNotEmpty) {
-        final remaining = 9 - _selectedImages.length;
+        final remaining = _maxImageCount - _selectedImages.length;
         final toAdd = pickedFiles.take(remaining).map((f) => File(f.path)).toList();
         setState(() {
           _selectedImages.addAll(toAdd);
@@ -383,7 +384,7 @@ class _PublishPageState extends State<PublishPage> {
 
   Widget _buildMediaSection(int gridColumns) {
     final totalMedia = _selectedImages.length + (_selectedVideo != null ? 1 : 0);
-    final canAddImage = _selectedImages.length < 9;
+    final canAddImage = _selectedImages.length < _maxImageCount;
     final canAddVideo = _selectedVideo == null;
     final showAddButton = canAddImage || canAddVideo;
 
@@ -426,7 +427,7 @@ class _PublishPageState extends State<PublishPage> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              '${_selectedImages.length}/9 图片${_selectedVideo != null ? '  ·  1 视频' : ''}',
+              '${_selectedImages.length}/$_maxImageCount 图片${_selectedVideo != null ? '  ·  1 视频' : ''}',
               style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
             ),
           ),
@@ -527,7 +528,7 @@ class _PublishPageState extends State<PublishPage> {
   }
 
   void _showMediaPicker() {
-    final canAddImage = _selectedImages.length < 9;
+    final canAddImage = _selectedImages.length < _maxImageCount;
     final canAddVideo = _selectedVideo == null;
 
     if (canAddImage && canAddVideo) {
@@ -543,7 +544,7 @@ class _PublishPageState extends State<PublishPage> {
               ListTile(
                 leading: const Icon(Icons.image_rounded, color: Color(0xFFFF2442)),
                 title: const Text('添加图片'),
-                subtitle: Text('还可添加 ${9 - _selectedImages.length} 张'),
+                subtitle: Text('还可添加 ${_maxImageCount - _selectedImages.length} 张'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImages();
