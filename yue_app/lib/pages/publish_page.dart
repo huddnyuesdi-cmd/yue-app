@@ -24,6 +24,7 @@ class _PublishPageState extends State<PublishPage>
   bool _isPublishing = false;
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
+  final FocusNode _tagFocusNode = FocusNode();
   int _titleLength = 0;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -47,6 +48,7 @@ class _PublishPageState extends State<PublishPage>
     _titleController.dispose();
     _contentController.dispose();
     _tagController.dispose();
+    _tagFocusNode.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -220,12 +222,6 @@ class _PublishPageState extends State<PublishPage>
       }
     }
   }
-
-  bool get _hasContent =>
-      _titleController.text.trim().isNotEmpty ||
-      _contentController.text.trim().isNotEmpty ||
-      _selectedImages.isNotEmpty ||
-      _selectedVideo != null;
 
   @override
   Widget build(BuildContext context) {
@@ -726,6 +722,7 @@ class _PublishPageState extends State<PublishPage>
                   ),
                   child: TextField(
                     controller: _tagController,
+                    focusNode: _tagFocusNode,
                     decoration: const InputDecoration(
                       hintText: '输入标签，回车添加',
                       hintStyle:
@@ -870,36 +867,10 @@ class _PublishPageState extends State<PublishPage>
             icon: Icons.tag_rounded,
             label: '标签',
             onTap: () {
-              // Scroll to tag section — just focus the tag input
-              FocusScope.of(context).requestFocus(FocusNode());
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted) {
-                  FocusScope.of(context).requestFocus(FocusNode());
-                }
-              });
+              _tagFocusNode.requestFocus();
             },
           ),
           const Spacer(),
-          if (_hasContent)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FFF0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.auto_awesome_rounded,
-                      size: 14, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 4),
-                  Text('草稿已保存',
-                      style:
-                          TextStyle(fontSize: 11, color: Color(0xFF4CAF50))),
-                ],
-              ),
-            ),
         ],
       ),
     );
