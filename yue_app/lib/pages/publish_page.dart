@@ -308,7 +308,7 @@ class _PublishPageState extends State<PublishPage> {
                 // Title container
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -319,7 +319,7 @@ class _PublishPageState extends State<PublishPage> {
                       hintText: '填写标题，会有更多赞哦~',
                       hintStyle: TextStyle(fontSize: 17, color: Color(0xFFBBBBBB), fontWeight: FontWeight.w600),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                       counterStyle: TextStyle(color: Color(0xFFBBBBBB)),
                     ),
                     style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
@@ -331,7 +331,7 @@ class _PublishPageState extends State<PublishPage> {
                 // Content container
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -342,7 +342,7 @@ class _PublishPageState extends State<PublishPage> {
                       hintText: '添加正文',
                       hintStyle: TextStyle(fontSize: 15, color: Color(0xFFBBBBBB)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     ),
                     style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.6),
                     maxLines: null,
